@@ -27,7 +27,8 @@ def _clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
 
 def _log(msg: str, level: str = "INFO"):
     if VERBOSE:
-        print(f"[{level}] [integration] {msg}", flush=True)
+        # Intentionally indented so step logs sit under the active [RUN] test line.
+        print(f"    [{level}] {msg}", flush=True)
 
 
 class TestXR18Integration(unittest.TestCase):

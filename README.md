@@ -211,7 +211,7 @@ What it validates:
 - idempotent restore behavior across repeated cycles
 - level restore works after test
 
-The suite is verbose by default and prints per-step internals (bus/channel, before/after levels, deltas, restores, latency samples). Use `--quiet` to reduce output.
+The suite is verbose by default and prints per-step internals (bus/channel, before/after levels, deltas, restores, latency samples). Logs are line-buffered and flush immediately (no extra env var needed). Use `--quiet` to reduce output.
 
 The runner also prints standard-style test lifecycle lines and summary:
 - `[RUN ]` test start

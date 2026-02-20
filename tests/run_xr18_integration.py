@@ -5,6 +5,13 @@ import time
 import unittest
 from pathlib import Path
 
+# Make output stream line-buffered so step logs appear immediately without env hacks.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
 # Ensure project root is importable when running from tests/ on the Pi.
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
