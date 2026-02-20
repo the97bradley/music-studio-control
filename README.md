@@ -185,7 +185,7 @@ python3 tests/run_xr18_integration.py \
 
 What it validates:
 - OSC connectivity/query works
-- simulated knob movement changes mixer level (`--sim-detents` supports signed + / -)
+- simulated knob movement changes mixer level (`--sim-detents` supports signed + / -, with default step size 0.01)
 - detent simulation can be spread over time with `--sim-duration-s`
 - level restore works after test
 

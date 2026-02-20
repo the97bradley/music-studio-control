@@ -12,7 +12,7 @@ XR18_BUS = 2
 XR18_TEST_CHANNEL = 18
 LOCAL_PORT = 9101
 SIM_DETENTS = 1          # signed: +up / -down
-STEP_SIZE = 0.03         # linear mixer units per detent
+STEP_SIZE = 0.01         # linear mixer units per detent
 SIM_DURATION_S = 0.0     # spread simulated detents over this duration
 
 
