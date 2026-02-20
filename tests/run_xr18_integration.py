@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 import argparse
+import sys
 import unittest
+from pathlib import Path
+
+# Ensure project root is importable when running from tests/ on the Pi.
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import test_integration_xr18 as live
 
