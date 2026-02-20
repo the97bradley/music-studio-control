@@ -28,4 +28,5 @@ Raspberry Pi endpoint for personal monitor control on Behringer XR18.
 - dB reference constants in `state.py` use XR18 range `-90.0 .. +10.0`.
 - Startup writes `BOOT` info to displays, then switches to live levels.
 - On stale mixer link, displays show `ERROR | XR18 LINK` and knob writes are blocked until recovery.
+- Exceptions are centralized via `error_handler.py` and routed to the first screen (`knob1` by default) for headless troubleshooting.
 - Displays refresh during periodic sync, so external mixer/app changes are reflected.

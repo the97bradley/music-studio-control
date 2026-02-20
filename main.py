@@ -3,6 +3,7 @@ import time
 
 from config import startup
 from display import percent_from_value, set_screen_display, set_screen_text
+from error_handler import report_error
 from faders import add_group
 from knobs import poll_knobs
 from sync import sync_faders
@@ -34,51 +35,64 @@ def _render_levels(st):
 
 
 def main():
-    osc, st = startup()
+    try:
+        osc, st = startup()
+    except Exception as exc:
+        report_error("startup", exc)
+        raise
+
     print("[startup] XR18 connected; entering control loop")
     print(f"[startup] bus={st.bus} knobs={len(st.knob_to_group)} sync={SYNC_EVERY_S}s deadman={DEADMAN_TIMEOUT_S}s")
 
-    _render_startup(st)
-    _render_levels(st)
+    try:
+        _render_startup(st)
+        _render_levels(st)
+    except Exception as exc:
+        report_error("display_init", exc, st)
 
     last_sync = 0.0
     deadman_active = False
 
     while True:
-        now = time.time()
+        try:
+            now = time.time()
 
-        if now - last_sync >= SYNC_EVERY_S:
-            ok = sync_faders(osc, st, 18)
-            last_sync = now
-            if ok:
-                if deadman_active:
-                    print("[sync] recovered from stale state")
-                deadman_active = False
-                _render_levels(st)
-            else:
-                age = now - st.last_ok_sync_ts
-                if age >= DEADMAN_TIMEOUT_S and not deadman_active:
-                    deadman_active = True
-                    print(f"[deadman] mixer sync stale for {age:.1f}s")
-                    _render_error(st, "XR18 LINK")
+            if now - last_sync >= SYNC_EVERY_S:
+                ok = sync_faders(osc, st, 18)
+                last_sync = now
+                if ok:
+                    if deadman_active:
+                        print("[sync] recovered from stale state")
+                    deadman_active = False
+                    _render_levels(st)
+                else:
+                    age = now - st.last_ok_sync_ts
+                    if age >= DEADMAN_TIMEOUT_S and not deadman_active:
+                        deadman_active = True
+                        print(f"[deadman] mixer sync stale for {age:.1f}s")
+                        _render_error(st, "XR18 LINK")
 
-        events = poll_knobs()
-        if deadman_active and events:
-            # fail-safe: ignore writes while stale link is active
-            continue
-
-        for knob_id, direction in events:
-            group_name = st.knob_to_group.get(knob_id)
-            if not group_name:
+            events = poll_knobs()
+            if deadman_active and events:
+                # fail-safe: ignore writes while stale link is active
+                time.sleep(LOOP_SLEEP_S)
                 continue
 
-            step = st.knob_step.get(knob_id, 0.03)
-            add_group(osc, st, group_name, direction * step)
+            for knob_id, direction in events:
+                group_name = st.knob_to_group.get(knob_id)
+                if not group_name:
+                    continue
 
-            chans = st.groups[group_name]
-            rep_ch = chans[0]
-            pct = percent_from_value(st.ch_level[rep_ch])
-            set_screen_display(knob_id, group_name.upper(), pct)
+                step = st.knob_step.get(knob_id, 0.03)
+                add_group(osc, st, group_name, direction * step)
+
+                chans = st.groups[group_name]
+                rep_ch = chans[0]
+                pct = percent_from_value(st.ch_level[rep_ch])
+                set_screen_display(knob_id, group_name.upper(), pct)
+
+        except Exception as exc:
+            report_error("main_loop", exc, st)
 
         time.sleep(LOOP_SLEEP_S)
 
