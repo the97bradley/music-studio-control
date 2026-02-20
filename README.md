@@ -1,33 +1,128 @@
 # music-studio-control
 
-Raspberry Pi endpoint for personal monitor control on Behringer XR18.
+A Raspberry Pi box for **personal monitor mixing** on a Behringer XR18.
 
-## Current architecture
+Think of it like a DIY Hearback-style controller for recording sessions:
+- 8 knobs
+- 8 mini OLED screens
+- one monitor bus per musician/station
 
-- `main.py` loop: polls knob events, applies grouped fader deltas, syncs mixer state, updates displays.
-- `osc.py`: UDP OSC client + query support + xremote keepalive.
-- `state.py`: in-memory mixer state, channel names, group definitions, knob mapping, per-knob step.
-- `controls.py` + `controls.json`: externalized group/mapping/sensitivity config.
-- `knobs.py`: encoder backend adapter (`ENCODER_BACKEND`, currently `null`).
-- `display.py`: display backend adapter (`DISPLAY_BACKEND`, `null` or `console`).
+---
 
-## Environment variables
+## What this project does
 
-- `XR18_IP` (required): mixer IP address.
-- `XR18_BUS` (optional, default `2`): monitor bus 1..6.
-- `LOCAL_PORT` (optional, default `9100`): local UDP port.
-- `CONTROLS_CONFIG` (optional, default `controls.json`): path to controls config.
-- `ENCODER_BACKEND` (optional, default `null`): encoder backend selection.
-- `DISPLAY_BACKEND` (optional, default `null`): display backend selection (`console` for debug output).
-- `SYNC_EVERY_S` (optional, default `1.0`): mixer sync interval.
-- `DEADMAN_TIMEOUT_S` (optional, default `3.0`): stale-link timeout before lockout + error display.
+This service runs on a Pi and talks to the XR18 over OSC.
+
+It:
+- reads knob movements,
+- adjusts grouped channel levels,
+- keeps local state in sync with the mixer,
+- updates little screens so the user sees what changed.
+
+It is built for **headless operation** (no keyboard/monitor attached), so error/status info is shown on-screen and printed to logs.
+
+---
+
+## Current status (important)
+
+Core control logic is in place.
+
+Hardware-specific drivers are still stubs right now:
+- `ENCODER_BACKEND` defaults to `null`
+- `DISPLAY_BACKEND` defaults to `null` (or `console` for SSH/debug)
+
+So the architecture is ready, and now we can plug in real GPIO/I2C backends.
+
+---
+
+## File map (quick)
+
+- `main.py` — main control loop
+- `osc.py` — OSC transport + query + keepalive
+- `state.py` — runtime state (`ch_level`, names, mappings, per-knob step)
+- `controls.json` — editable mappings/sensitivity
+- `controls.py` — loads/validates controls config
+- `faders.py` — group-level mixer writes
+- `sync.py` — periodic readback from mixer
+- `knobs.py` — encoder backend adapter
+- `display.py` — display backend adapter
+- `error_handler.py` — centralized exception handling + on-screen error codes
+
+---
+
+## Configuration
+
+### Required
+- `XR18_IP` — mixer IP address
+
+### Optional (with defaults)
+- `XR18_BUS=2` — monitor bus (1..6)
+- `LOCAL_PORT=9100` — local UDP port
+- `CONTROLS_CONFIG=controls.json` — path to controls mapping file
+- `ENCODER_BACKEND=null` — encoder backend selector
+- `DISPLAY_BACKEND=null` — display backend selector (`console` is useful for testing)
+- `SYNC_EVERY_S=1.0` — sync interval in seconds
+- `DEADMAN_TIMEOUT_S=3.0` — stale-link timeout before lockout/error
+
+---
+
+## controls.json
+
+This is where you customize behavior without editing Python.
+
+You can define:
+- `groups` (which channels each logical control affects)
+- `knob_to_group` (which physical knob controls which group)
+- `knob_step` (sensitivity per knob)
+
+Example:
+
+```json
+{
+  "groups": {
+    "vocal": [1],
+    "drums": [6, 7, 8, 9, 10, 11]
+  },
+  "knob_to_group": {
+    "knob1": "vocal",
+    "knob6": "drums"
+  },
+  "knob_step": {
+    "knob1": 0.03,
+    "knob6": 0.02
+  }
+}
+```
+
+---
 
 ## Runtime behavior
 
-- Channel levels are stored as **linear 0.0..1.0** values in `State.ch_level`.
-- dB reference constants in `state.py` use XR18 range `-90.0 .. +10.0`.
-- Startup writes `BOOT` info to displays, then switches to live levels.
-- On stale mixer link, displays show `ERROR | XR18 LINK` and knob writes are blocked until recovery.
-- Exceptions are centralized via `error_handler.py` and routed to the first screen (`knob1` by default) for headless troubleshooting.
-- Error codes: `E101` startup, `E102` display init, `E201` main loop, `E999` unknown.
-- Displays refresh during periodic sync, so external mixer/app changes are reflected.
+- Internal channel values are stored as **linear 0.0..1.0** in `State.ch_level`.
+- XR18 dB reference constants are in `state.py` (`-90.0 .. +10.0`).
+- On boot, screens show `BOOT`, then switch to live values.
+- Sync runs every second by default, so external mixer/app changes appear on displays quickly.
+- If mixer comms go stale past timeout, writes are blocked and screens show link error.
+
+---
+
+## Error handling (headless-friendly)
+
+All major exceptions flow through a centralized handler and are routed to screen 1 (`knob1` by default).
+
+Error codes:
+- `E101` — startup failure
+- `E102` — display init failure
+- `E201` — main loop failure
+- `E999` — unknown fallback
+
+This makes it possible to diagnose failures from the device itself without SSH.
+
+---
+
+## Next recommended steps
+
+1. Implement real encoder backend (GPIO or I2C expander).
+2. Implement real OLED backend (SSD1306/SH1106, whichever your screens are).
+3. Add a tiny installer note for Pi OS + systemd environment file.
+4. Add a simple hardware self-test mode (`--self-test`) for bench validation.
