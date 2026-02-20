@@ -134,6 +134,8 @@ All major exceptions flow through a centralized handler and are routed to screen
 
 This makes it possible to diagnose failures from the device itself without SSH.
 
+For likely causes and quick fixes per code, see **`docs/errors.md`**.
+
 ---
 
 ## Next recommended steps
