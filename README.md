@@ -167,15 +167,18 @@ Current test coverage includes:
 - error-code mapping and fallback alert path
 - granular apply-path error routing
 
-### Live XR18 integration tests (opt-in)
+### Live XR18 integration tests (explicit flag)
 
 There is also a live integration test suite that talks to a real XR18.
 
-It is **disabled by default** and only runs when explicitly enabled:
+It only runs with an explicit safety flag:
 
 ```bash
-RUN_XR18_INTEGRATION=1 XR18_IP=192.168.x.x XR18_BUS=2 XR18_TEST_CHANNEL=18 \
-python3 -m unittest tests/test_integration_xr18.py -v
+python3 tests/run_xr18_integration.py \
+  --live-xr18 \
+  --xr18-ip 192.168.x.x \
+  --xr18-bus 2 \
+  --xr18-test-channel 18
 ```
 
 What it validates:
@@ -184,7 +187,8 @@ What it validates:
 - level restore works after test
 
 Safety notes:
-- use a safe channel for testing (`XR18_TEST_CHANNEL`, default `18`)
+- uses an explicit run flag (`--live-xr18`) so accidental runs are less likely
+- use a safe channel for testing (`--xr18-test-channel`, default `18`)
 - run when no critical recording take is in progress
 - test restores the original value at end
 
