@@ -192,6 +192,9 @@ Test selectors:
 - `-g`, `--latency <queries> <max_ms>`
 - `-i`, `--idempotent`
 - `-j`, `--timeout <ip> <max_s>`
+- `-k`, `--reconnect`
+- `-l`, `--burst <steps> <delta>`
+- `-m`, `--drums`
 
 Example:
 
@@ -206,7 +209,10 @@ python3 tests/run_xr18_integration.py \
   -f \
   -g 10 350 \
   -i \
-  -j 192.0.2.1 6
+  -j 192.0.2.1 6 \
+  -k \
+  -l 40 0.01 \
+  -m
 ```
 
 What it validates:
@@ -219,6 +225,9 @@ What it validates:
 - bus correctness (target bus changes, alternate bus stays stable)
 - query latency budget
 - timeout behavior against unreachable peer
+- reconnect/resume behavior after transport reset
+- burst/hammer motion path behavior
+- drums-group sweep test (6-channel profile)
 - idempotent restore behavior across repeated cycles
 - level restore works after test
 

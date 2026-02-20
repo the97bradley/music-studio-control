@@ -14,6 +14,8 @@ LATENCY_QUERIES = 8
 LATENCY_MAX_MS = 350.0
 DROP_TEST_IP = "192.0.2.1"
 DROP_TEST_MAX_S = 6.0
+BURST_STEPS = 40
+BURST_DELTA = 0.01
 VERBOSE = True
 
 # Fixed live coverage set (sequential, not concurrent)
@@ -341,6 +343,89 @@ class TestXR18Integration(unittest.TestCase):
                     cur = self._sync_channel(st, ch)
                     self.assertAlmostEqual(cur, baseline, places=3)
                 _log(f"idempotent PASS bus={bus} ch={ch}", "PASS")
+
+    def test_reconnect_resume(self):
+        from osc import OscClient
+
+        bus = TEST_BUSES[0]
+        ch = TEST_CHANNELS[0]
+        _log(f"reconnect/resume test bus={bus} ch={ch}")
+
+        v1 = self._query_level(ch, bus)
+        self.assertIsNotNone(v1, "Initial query failed before reconnect test")
+
+        # Simulate transport reset/reconnect.
+        self.osc.close()
+        self.__class__.osc = OscClient(XR18_IP, local_port=int(LOCAL_PORT), timeout_s=2.0)
+
+        v2 = self._query_level(ch, bus)
+        self.assertIsNotNone(v2, "Query failed after reconnect")
+        _log(f"reconnect/resume PASS before={v1:.4f} after={v2:.4f}", "PASS")
+
+    def test_burst_motion_and_restore(self):
+        bus = TEST_BUSES[0]
+        ch = TEST_CHANNELS[0]
+        st = self._state_for(bus, ch)
+        if st is None:
+            self.skipTest(f"No query response for bus={bus}, ch={ch}")
+
+        before = st.ch_level[ch]
+        _log(f"burst motion start bus={bus} ch={ch} steps={BURST_STEPS} delta={BURST_DELTA:+.4f}")
+
+        for i in range(int(BURST_STEPS)):
+            add_group(self.osc, st, "test", BURST_DELTA)
+            if i % 10 == 0 or i == BURST_STEPS - 1:
+                _log(f"burst step {i+1}/{BURST_STEPS}")
+
+        time.sleep(0.1)
+        after = self._sync_channel(st, ch)
+        self.assertIsNotNone(after)
+        self.assertNotAlmostEqual(before, after, delta=0.003)
+
+        restored = self._restore_channel(st, ch, before)
+        self.assertAlmostEqual(restored, before, places=3)
+        _log(f"burst motion PASS after={after:.4f} restored={restored:.4f}", "PASS")
+
+    def test_drums_profile_sweep_and_restore(self):
+        drums = [6, 7, 8, 9, 10, 11]
+        bus = TEST_BUSES[0]
+        _log(f"drums profile sweep bus={bus} channels={drums}")
+
+        st = State(bus=bus)
+        st.ensure_channels(18)
+        st.groups = {"drums": drums}
+
+        before = {ch: self._query_level(ch, bus) for ch in drums}
+        for ch, v in before.items():
+            self.assertIsNotNone(v, f"No query response for drum ch={ch}")
+
+        # Up sweep then down sweep.
+        set_group(self.osc, st, "drums", 0.55)
+        time.sleep(0.12)
+        up = {ch: self._query_level(ch, bus) for ch in drums}
+
+        set_group(self.osc, st, "drums", 0.25)
+        time.sleep(0.12)
+        down = {ch: self._query_level(ch, bus) for ch in drums}
+
+        self.assertTrue(all(v is not None for v in up.values()))
+        self.assertTrue(all(v is not None for v in down.values()))
+
+        for ch in drums:
+            self.assertGreaterEqual(up[ch], down[ch] - 0.01)
+
+        # Restore each channel.
+        for ch, v in before.items():
+            addr = f"/ch/{ch:02d}/mix/{bus:02d}/level"
+            self.osc.send(addr, float(v))
+        time.sleep(0.15)
+
+        restored = {ch: self._query_level(ch, bus) for ch in drums}
+        for ch in drums:
+            self.assertIsNotNone(restored[ch])
+            self.assertAlmostEqual(restored[ch], before[ch], places=3)
+
+        _log("drums profile sweep PASS", "PASS")
 
     def test_timeout_behavior_on_unreachable_peer(self):
         from osc import OscClient

@@ -74,6 +74,9 @@ def main():
     parser.add_argument("-g", "--latency", nargs=2, metavar=("QUERIES", "MAX_MS"), help="Run query latency budget test")
     parser.add_argument("-i", "--idempotent", action="store_true", help="Run idempotent restore test")
     parser.add_argument("-j", "--timeout", nargs=2, metavar=("IP", "MAX_S"), help="Run unreachable-peer timeout behavior test")
+    parser.add_argument("-k", "--reconnect", action="store_true", help="Run reconnect/resume test")
+    parser.add_argument("-l", "--burst", nargs=2, metavar=("STEPS", "DELTA"), help="Run rapid burst motion test")
+    parser.add_argument("-m", "--drums", action="store_true", help="Run drums profile sweep test")
 
     args = parser.parse_args()
 
@@ -119,6 +122,17 @@ def main():
         live.DROP_TEST_IP = args.timeout[0]
         live.DROP_TEST_MAX_S = float(args.timeout[1])
         _add_case(suite, "test_timeout_behavior_on_unreachable_peer")
+
+    if args.reconnect:
+        _add_case(suite, "test_reconnect_resume")
+
+    if args.burst:
+        live.BURST_STEPS = int(args.burst[0])
+        live.BURST_DELTA = float(args.burst[1])
+        _add_case(suite, "test_burst_motion_and_restore")
+
+    if args.drums:
+        _add_case(suite, "test_drums_profile_sweep_and_restore")
 
     if suite.countTestCases() == 0:
         raise SystemExit(
