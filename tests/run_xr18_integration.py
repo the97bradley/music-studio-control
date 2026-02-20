@@ -12,30 +12,78 @@ if str(ROOT) not in sys.path:
 import test_integration_xr18 as live
 
 
+def _add_case(suite, method_name: str):
+    suite.addTest(live.TestXR18Integration(method_name))
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Run live XR18 integration tests (explicit opt-in).")
+    parser = argparse.ArgumentParser(
+        description="Run selected live XR18 integration tests (flag-per-test style)."
+    )
     parser.add_argument("--xr18-ip", required=True, help="XR18 mixer IP")
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
-    parser.add_argument("--sim-detents", type=int, default=1, help="Signed simulated detents (+up / -down)")
-    parser.add_argument("--sim-duration-s", type=float, default=0.0, help="Spread detents over this many seconds")
-    parser.add_argument("--group-channels", default="", help="CSV channels for group consistency test (e.g. 6,7,8)")
-    parser.add_argument("--latency-queries", type=int, default=8, help="Number of queries for latency test")
-    parser.add_argument("--latency-max-ms", type=float, default=350.0, help="Max p95 query latency budget in ms")
-    parser.add_argument("--drop-test-ip", default="192.0.2.1", help="Unreachable IP used for timeout/dead-link behavior test")
-    parser.add_argument("--drop-test-max-s", type=float, default=6.0, help="Max allowed seconds for unreachable-peer timeout test")
+
+    # Per-test selectors (short + long)
+    parser.add_argument("-a", "--connectivity", action="store_true", help="Run connectivity query test")
+    parser.add_argument("-b", "--linear", nargs=2, metavar=("DETENTS", "DURATION_S"), help="Run linear motion test")
+    parser.add_argument("-c", "--backforth", nargs=2, metavar=("DETENTS", "DURATION_S"), help="Run back-and-forth motion test")
+    parser.add_argument("-d", "--boundary", action="store_true", help="Run low/high clamp boundary test")
+    parser.add_argument("-e", "--group", metavar="CSV", help="Run group consistency test with channels CSV (e.g. 6,7,8)")
+    parser.add_argument("-f", "--buscheck", action="store_true", help="Run targeted bus correctness test")
+    parser.add_argument("-g", "--latency", nargs=2, metavar=("QUERIES", "MAX_MS"), help="Run query latency budget test")
+    parser.add_argument("-i", "--idempotent", action="store_true", help="Run idempotent restore test")
+    parser.add_argument("-j", "--timeout", nargs=2, metavar=("IP", "MAX_S"), help="Run unreachable-peer timeout behavior test")
+
     args = parser.parse_args()
 
+    # Base config
     live.XR18_IP = args.xr18_ip
     live.LOCAL_PORT = args.local_port
-    live.SIM_DETENTS = args.sim_detents
-    live.SIM_DURATION_S = args.sim_duration_s
-    live.GROUP_CHANNELS = args.group_channels
-    live.LATENCY_QUERIES = args.latency_queries
-    live.LATENCY_MAX_MS = args.latency_max_ms
-    live.DROP_TEST_IP = args.drop_test_ip
-    live.DROP_TEST_MAX_S = args.drop_test_max_s
 
-    suite = unittest.defaultTestLoader.loadTestsFromModule(live)
+    suite = unittest.TestSuite()
+
+    if args.connectivity:
+        _add_case(suite, "test_connectivity_query_level")
+
+    if args.linear:
+        live.SIM_DETENTS = int(args.linear[0])
+        live.SIM_DURATION_S = float(args.linear[1])
+        _add_case(suite, "test_simulated_linear_motion_and_restore")
+
+    if args.backforth:
+        live.SIM_DETENTS = int(args.backforth[0])
+        live.SIM_DURATION_S = float(args.backforth[1])
+        _add_case(suite, "test_simulated_back_and_forth_motion_and_restore")
+
+    if args.boundary:
+        _add_case(suite, "test_boundary_clamp_low_high")
+
+    if args.group:
+        live.GROUP_CHANNELS = args.group
+        _add_case(suite, "test_group_consistency_multi_channel")
+
+    if args.buscheck:
+        _add_case(suite, "test_bus_correctness_targeted_write")
+
+    if args.latency:
+        live.LATENCY_QUERIES = int(args.latency[0])
+        live.LATENCY_MAX_MS = float(args.latency[1])
+        _add_case(suite, "test_query_latency_budget")
+
+    if args.idempotent:
+        _add_case(suite, "test_idempotent_restore_two_cycles")
+
+    if args.timeout:
+        live.DROP_TEST_IP = args.timeout[0]
+        live.DROP_TEST_MAX_S = float(args.timeout[1])
+        _add_case(suite, "test_timeout_behavior_on_unreachable_peer")
+
+    if suite.countTestCases() == 0:
+        raise SystemExit(
+            "No tests selected. Example: "
+            "python3 tests/run_xr18_integration.py --xr18-ip 192.168.50.62 -a -b -12 2.0 -d"
+        )
+
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     raise SystemExit(0 if result.wasSuccessful() else 1)
 

@@ -169,20 +169,37 @@ Current test coverage includes:
 
 ### Live XR18 integration tests
 
-There is also a live integration test suite that talks to a real XR18.
+There is also a live integration test runner with **one flag per test** (short + long forms).
 
-It runs sequentially across multiple buses/channels (currently buses `1,2` and channels `1,16`).
+Base args:
+- `--xr18-ip <ip>` (required)
+- `--local-port <port>` (optional)
+
+Test selectors:
+- `-a`, `--connectivity`
+- `-b`, `--linear <detents> <duration_s>`
+- `-c`, `--backforth <detents> <duration_s>`
+- `-d`, `--boundary`
+- `-e`, `--group <csv_channels>`
+- `-f`, `--buscheck`
+- `-g`, `--latency <queries> <max_ms>`
+- `-i`, `--idempotent`
+- `-j`, `--timeout <ip> <max_s>`
+
+Example:
 
 ```bash
 python3 tests/run_xr18_integration.py \
   --xr18-ip 192.168.x.x \
-  --sim-detents 12 \
-  --sim-duration-s 2.0 \
-  --group-channels 6,7,8 \
-  --latency-queries 10 \
-  --latency-max-ms 350 \
-  --drop-test-ip 192.0.2.1 \
-  --drop-test-max-s 6
+  -a \
+  -b -12 2.0 \
+  -c 12 2.0 \
+  -d \
+  -e 6,7,8 \
+  -f \
+  -g 10 350 \
+  -i \
+  -j 192.0.2.1 6
 ```
 
 What it validates:
