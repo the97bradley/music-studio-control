@@ -5,6 +5,10 @@ from typing import Dict, List
 MIN_LEVEL = 0.0
 MAX_LEVEL = 1.0
 
+# XR18 fader scale reference (for display/conversion helpers)
+MIN_DB = -90.0
+MAX_DB = 10.0
+
 
 @dataclass
 class State:
