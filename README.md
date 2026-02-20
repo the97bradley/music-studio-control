@@ -219,6 +219,13 @@ What it validates:
 
 The suite is verbose by default and prints per-step internals (bus/channel, before/after levels, deltas, restores, latency samples). Use `--quiet` to reduce output.
 
+The runner also prints standard-style test lifecycle lines and summary:
+- `[RUN ]` test start
+- `[PASS]` success
+- `[FAIL]` assertion failure
+- `[ERR ]` runtime error
+- `[SKIP]` skipped test
+
 Safety notes:
 - runs sequentially (not concurrent) across configured buses/channels
 - run when no critical recording take is in progress

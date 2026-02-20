@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -14,6 +15,37 @@ import test_integration_xr18 as live
 
 def _add_case(suite, method_name: str):
     suite.addTest(live.TestXR18Integration(method_name))
+
+
+class PrettyTextResult(unittest.TextTestResult):
+    def startTest(self, test):
+        self._t0 = time.time()
+        super().startTest(test)
+        self.stream.writeln(f"[RUN ] {test.id()}")
+
+    def addSuccess(self, test):
+        dt = time.time() - getattr(self, "_t0", time.time())
+        super().addSuccess(test)
+        self.stream.writeln(f"[PASS] {test.id()} ({dt:.2f}s)")
+
+    def addFailure(self, test, err):
+        dt = time.time() - getattr(self, "_t0", time.time())
+        super().addFailure(test, err)
+        self.stream.writeln(f"[FAIL] {test.id()} ({dt:.2f}s)")
+
+    def addError(self, test, err):
+        dt = time.time() - getattr(self, "_t0", time.time())
+        super().addError(test, err)
+        self.stream.writeln(f"[ERR ] {test.id()} ({dt:.2f}s)")
+
+    def addSkip(self, test, reason):
+        dt = time.time() - getattr(self, "_t0", time.time())
+        super().addSkip(test, reason)
+        self.stream.writeln(f"[SKIP] {test.id()} ({dt:.2f}s) reason={reason}")
+
+
+class PrettyTextRunner(unittest.TextTestRunner):
+    resultclass = PrettyTextResult
 
 
 def main():
@@ -86,7 +118,19 @@ def main():
             "python3 tests/run_xr18_integration.py --xr18-ip 192.168.50.62 -a -b -12 2.0 -d"
         )
 
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    print("=== XR18 Integration Test Run ===")
+    print(f"target={args.xr18_ip} local_port={args.local_port} selected_cases={suite.countTestCases()}")
+
+    t0 = time.time()
+    result = PrettyTextRunner(verbosity=1).run(suite)
+    dt = time.time() - t0
+
+    print("=== Summary ===")
+    print(
+        f"ran={result.testsRun} pass={result.testsRun - len(result.failures) - len(result.errors) - len(result.skipped)} "
+        f"fail={len(result.failures)} error={len(result.errors)} skip={len(result.skipped)} time={dt:.2f}s"
+    )
+
     raise SystemExit(0 if result.wasSuccessful() else 1)
 
 

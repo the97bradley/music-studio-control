@@ -26,15 +26,16 @@ def _clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return lo if v < lo else hi if v > hi else v
 
 
-def _log(msg: str):
+def _log(msg: str, level: str = "INFO"):
     if VERBOSE:
-        print(f"[integration] {msg}")
+        print(f"[{level}] [integration] {msg}")
 
 
 class TestXR18Integration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if not XR18_IP:
+            _log("XR18 IP not provided", "WARN")
             raise unittest.SkipTest("XR18 IP not provided")
 
         from osc import OscClient
@@ -58,7 +59,10 @@ class TestXR18Integration(unittest.TestCase):
                 break
 
         if not any_ok:
+            _log("Could not query any configured bus/channel from XR18", "WARN")
             raise unittest.SkipTest("Could not query any configured bus/channel from XR18")
+
+        _log("Preflight passed", "PASS")
 
     @classmethod
     def tearDownClass(cls):
@@ -110,6 +114,7 @@ class TestXR18Integration(unittest.TestCase):
                 _log(f"connectivity check bus={bus} ch={ch}")
                 v = self._query_level(ch, bus)
                 self.assertIsNotNone(v, f"XR18 did not return level query for bus={bus}, ch={ch}")
+                _log(f"connectivity ok bus={bus} ch={ch} value={v:.4f}", "PASS")
 
     def test_simulated_linear_motion_and_restore(self):
         detents = int(SIM_DETENTS)
@@ -155,6 +160,7 @@ class TestXR18Integration(unittest.TestCase):
                 restored = self._restore_channel(st, ch, before)
                 _log(f"linear restore bus={bus} ch={ch} restored={restored:.4f} target={before:.4f}")
                 self.assertAlmostEqual(restored, before, places=3)
+                _log(f"boundary PASS bus={bus} ch={ch}", "PASS")
 
     def test_simulated_back_and_forth_motion_and_restore(self):
         steps = max(1, abs(int(SIM_DETENTS)))
@@ -190,6 +196,7 @@ class TestXR18Integration(unittest.TestCase):
                 restored = self._restore_channel(st, ch, baseline)
                 _log(f"back-forth restore bus={bus} ch={ch} restored={restored:.4f}")
                 self.assertAlmostEqual(restored, baseline, places=3)
+                _log(f"back-forth PASS bus={bus} ch={ch}", "PASS")
 
     def test_boundary_clamp_low_high(self):
         for bus in TEST_BUSES:
@@ -221,6 +228,7 @@ class TestXR18Integration(unittest.TestCase):
                 restored = self._restore_channel(st, ch, before)
                 _log(f"boundary restore bus={bus} ch={ch} restored={restored:.4f}")
                 self.assertAlmostEqual(restored, before, places=3)
+                _log(f"boundary PASS bus={bus} ch={ch}", "PASS")
 
     def test_group_consistency_multi_channel(self):
         if len(self.group_channels) < 2:
@@ -246,6 +254,7 @@ class TestXR18Integration(unittest.TestCase):
             vals = list(after.values())
             span = max(vals) - min(vals)
             self.assertLessEqual(span, 0.01, f"Expected group channels to match closely, got {after}")
+            _log(f"group consistency PASS bus={bus} span={span:.4f}", "PASS")
 
             # restore channel-by-channel
             for ch, v in before.items():
@@ -283,6 +292,7 @@ class TestXR18Integration(unittest.TestCase):
 
             restored = self._restore_channel(st, ch, primary_before)
             self.assertAlmostEqual(restored, primary_before, places=3)
+            _log(f"bus correctness PASS ch={ch}", "PASS")
 
     def test_query_latency_budget(self):
         for bus in TEST_BUSES:
@@ -304,6 +314,7 @@ class TestXR18Integration(unittest.TestCase):
                     float(LATENCY_MAX_MS),
                     msg=f"p95 query latency {p95:.1f}ms exceeds budget {LATENCY_MAX_MS:.1f}ms; samples={samples}",
                 )
+                _log(f"latency PASS bus={bus} ch={ch} p95={p95:.1f}ms", "PASS")
 
     def test_idempotent_restore_two_cycles(self):
         for bus in TEST_BUSES:
@@ -323,6 +334,7 @@ class TestXR18Integration(unittest.TestCase):
                     sync_faders(self.osc, st, channels=18)
                     cur = st.ch_level[ch]
                     self.assertAlmostEqual(cur, baseline, places=3)
+                _log(f"idempotent PASS bus={bus} ch={ch}", "PASS")
 
     def test_timeout_behavior_on_unreachable_peer(self):
         from osc import OscClient
@@ -341,6 +353,7 @@ class TestXR18Integration(unittest.TestCase):
                 float(DROP_TEST_MAX_S),
                 msg=f"Unreachable peer timeout took too long: {dt:.2f}s (budget {DROP_TEST_MAX_S}s)",
             )
+            _log(f"timeout behavior PASS dt={dt:.2f}s", "PASS")
         finally:
             bad.close()
 
