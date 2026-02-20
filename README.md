@@ -148,6 +148,23 @@ For likely causes and quick fixes per code, see **`docs/errors.md`**.
 
 ---
 
+## Unit tests
+
+A lightweight unit test suite is included under `tests/`.
+
+Run all tests:
+
+```bash
+python3 -m unittest discover -s tests -p "test_*.py" -v
+```
+
+Current test coverage includes:
+- controls config loading/validation
+- mixer sync behavior (success + partial failure)
+- error-code mapping and fallback alert path
+
+---
+
 ## Next recommended steps
 
 1. Implement real encoder backend (GPIO or I2C expander).
