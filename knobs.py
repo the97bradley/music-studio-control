@@ -1,7 +1,13 @@
-def poll_knobs():
+from typing import List, Tuple
+from hardware import create_encoder_backend
+
+_encoder = create_encoder_backend()
+
+
+def poll_knobs() -> List[Tuple[str, int]]:
     """
     Returns list of events like:
-      ("drums", +1) or ("vocal", -1)
+      ("knob6", +1) or ("knob1", -1)
     where +/- means one detent movement.
     """
-    return []
+    return _encoder.read_events()

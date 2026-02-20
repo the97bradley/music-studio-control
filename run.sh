@@ -5,7 +5,7 @@ set -euo pipefail
 # XR18 Personal Monitor Endpoint Boot
 ########################################
 
-APP_DIR="/home/the97bradley/music-studio-control"
+APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$APP_DIR/osc-env"
 REQ_FILE="$APP_DIR/requirements.txt"
 

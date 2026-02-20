@@ -1,6 +1,5 @@
 import socket
 import threading
-from typing import Optional
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.osc_packet import OscPacket
 
@@ -13,27 +12,33 @@ class OscClient:
         self.sock.bind(("", local_port))
         self.sock.settimeout(timeout_s)
         self._stop = threading.Event()
+        self._io_lock = threading.Lock()
 
     def close(self):
         self._stop.set()
         try: self.sock.close()
         except: pass
 
-    def send(self, address: str, arg=None):
+    def _send_nolock(self, address: str, arg=None):
         b = OscMessageBuilder(address=address)
         if arg is not None:
             b.add_arg(arg)
         msg = b.build()
         self.sock.sendto(msg.dgram, (self.xr18_ip, XR18_PORT))
 
+    def send(self, address: str, arg=None):
+        with self._io_lock:
+            self._send_nolock(address, arg)
+
     def query(self, address: str, tries: int = 3):
         # enquiry: address with no args
         for _ in range(tries):
-            self.send(address)
-            try:
-                data, _ = self.sock.recvfrom(4096)
-            except socket.timeout:
-                continue
+            with self._io_lock:
+                self._send_nolock(address)
+                try:
+                    data, _ = self.sock.recvfrom(4096)
+                except socket.timeout:
+                    continue
 
             packet = OscPacket(data)
             for timed in packet.messages:
