@@ -13,6 +13,7 @@ XR18_TEST_CHANNEL = 18
 LOCAL_PORT = 9101
 SIM_DETENTS = 1          # signed: +up / -down
 STEP_SIZE = 0.03         # linear mixer units per detent
+SIM_DURATION_S = 0.0     # spread simulated detents over this duration
 
 
 def _clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -70,10 +71,23 @@ class TestXR18Integration(unittest.TestCase):
         ch = self.test_channel
         before = self.st.ch_level[ch]
 
-        delta = float(SIM_DETENTS) * float(STEP_SIZE)
-        expected = _clamp(before + delta)
+        detents = int(SIM_DETENTS)
+        sign = 1 if detents >= 0 else -1
+        steps = abs(detents)
+        step_delta = sign * float(STEP_SIZE)
+        total_delta = detents * float(STEP_SIZE)
+        expected = _clamp(before + total_delta)
 
-        add_group(self.osc, self.st, "test", delta)
+        if steps == 0:
+            # no movement requested
+            pass
+        else:
+            interval = max(0.0, float(SIM_DURATION_S)) / steps
+            for _ in range(steps):
+                add_group(self.osc, self.st, "test", step_delta)
+                if interval > 0:
+                    time.sleep(interval)
+
         time.sleep(0.1)
         sync_faders(self.osc, self.st, channels=18)
         after = self.st.ch_level[ch]
@@ -84,7 +98,7 @@ class TestXR18Integration(unittest.TestCase):
             delta=0.005,
             msg=(
                 f"Expected ~{expected:.3f} after simulated move "
-                f"(detents={SIM_DETENTS}, step={STEP_SIZE}); got {after:.3f}"
+                f"(detents={SIM_DETENTS}, step={STEP_SIZE}, duration_s={SIM_DURATION_S}); got {after:.3f}"
             ),
         )
 

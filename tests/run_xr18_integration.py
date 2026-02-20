@@ -21,6 +21,7 @@ def main():
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
     parser.add_argument("--sim-detents", type=int, default=1, help="Signed simulated detents (+up / -down)")
     parser.add_argument("--step-size", type=float, default=0.03, help="Linear level step per detent")
+    parser.add_argument("--sim-duration-s", type=float, default=0.0, help="Spread detents over this many seconds")
     args = parser.parse_args()
 
     if not args.live_xr18:
@@ -33,6 +34,7 @@ def main():
     live.LOCAL_PORT = args.local_port
     live.SIM_DETENTS = args.sim_detents
     live.STEP_SIZE = args.step_size
+    live.SIM_DURATION_S = args.sim_duration_s
 
     suite = unittest.defaultTestLoader.loadTestsFromModule(live)
     result = unittest.TextTestRunner(verbosity=2).run(suite)

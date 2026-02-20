@@ -179,12 +179,14 @@ python3 tests/run_xr18_integration.py \
   --xr18-ip 192.168.x.x \
   --xr18-bus 2 \
   --xr18-test-channel 18 \
-  --sim-detents 12
+  --sim-detents 12 \
+  --sim-duration-s 2.0
 ```
 
 What it validates:
 - OSC connectivity/query works
 - simulated knob movement changes mixer level (`--sim-detents` supports signed + / -)
+- detent simulation can be spread over time with `--sim-duration-s`
 - level restore works after test
 
 Safety notes:
