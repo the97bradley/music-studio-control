@@ -25,6 +25,12 @@ def _load_yaml(path: str) -> Dict[str, Any]:
     return data or {}
 
 
+def load_controls(path: str) -> Dict[str, Any]:
+    if not os.path.exists(path):
+        return {}
+    return _load_yaml(path)
+
+
 def apply_controls_config(st: State, path: str):
     if not os.path.exists(path):
         return

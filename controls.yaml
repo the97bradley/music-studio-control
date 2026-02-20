@@ -1,3 +1,6 @@
+xr18:
+  bus: 2
+
 groups:
   vocal: [1]
   keys: [2]

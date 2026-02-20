@@ -53,10 +53,10 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 ## Configuration
 
 ### Required
-- `XR18_IP` — mixer IP address
+- `XR18_IP` — mixer IP address (env), or set in `controls.yaml` as `xr18.ip`
 
 ### Optional (with defaults)
-- `XR18_BUS=2` — monitor bus (1..6)
+- `XR18_BUS` — optional env override for monitor bus (1..6). Preferred default location is `controls.yaml` (`xr18.bus`).
 - `LOCAL_PORT=9100` — local UDP port
 - `CONTROLS_CONFIG=<path>` — optional explicit controls YAML file (default: `controls.yaml`).
 - `ENCODER_BACKEND=null` — encoder backend selector
@@ -82,6 +82,10 @@ You can define:
 Example:
 
 ```yaml
+xr18:
+  bus: 2
+  # ip: 192.168.50.62
+
 groups:
   vocal: [1]
   drums: [6, 7, 8, 9, 10, 11]
