@@ -55,6 +55,7 @@ def main():
     parser.add_argument("--xr18-ip", required=True, help="XR18 mixer IP")
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
     parser.add_argument("--quiet", action="store_true", help="Reduce integration progress logging")
+    parser.add_argument("--verbose", action="store_true", help="Force verbose integration progress logging")
 
     # Per-test selectors (short + long)
     parser.add_argument("-a", "--connectivity", action="store_true", help="Run connectivity query test")
@@ -72,7 +73,7 @@ def main():
     # Base config
     live.XR18_IP = args.xr18_ip
     live.LOCAL_PORT = args.local_port
-    live.VERBOSE = not args.quiet
+    live.VERBOSE = True if args.verbose else (not args.quiet)
 
     suite = unittest.TestSuite()
 
@@ -119,7 +120,7 @@ def main():
         )
 
     print("=== XR18 Integration Test Run ===")
-    print(f"target={args.xr18_ip} local_port={args.local_port} selected_cases={suite.countTestCases()}")
+    print(f"target={args.xr18_ip} local_port={args.local_port} selected_cases={suite.countTestCases()} verbose={live.VERBOSE}")
     print("selected_tests:")
     for t in suite:
         print(f"  - {t.id()}")
