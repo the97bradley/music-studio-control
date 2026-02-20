@@ -21,6 +21,11 @@ def main():
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
     parser.add_argument("--sim-detents", type=int, default=1, help="Signed simulated detents (+up / -down)")
     parser.add_argument("--sim-duration-s", type=float, default=0.0, help="Spread detents over this many seconds")
+    parser.add_argument("--group-channels", default="", help="CSV channels for group consistency test (e.g. 6,7,8)")
+    parser.add_argument("--latency-queries", type=int, default=8, help="Number of queries for latency test")
+    parser.add_argument("--latency-max-ms", type=float, default=350.0, help="Max p95 query latency budget in ms")
+    parser.add_argument("--drop-test-ip", default="192.0.2.1", help="Unreachable IP used for timeout/dead-link behavior test")
+    parser.add_argument("--drop-test-max-s", type=float, default=6.0, help="Max allowed seconds for unreachable-peer timeout test")
     args = parser.parse_args()
 
     if not args.live_xr18:
@@ -33,6 +38,11 @@ def main():
     live.LOCAL_PORT = args.local_port
     live.SIM_DETENTS = args.sim_detents
     live.SIM_DURATION_S = args.sim_duration_s
+    live.GROUP_CHANNELS = args.group_channels
+    live.LATENCY_QUERIES = args.latency_queries
+    live.LATENCY_MAX_MS = args.latency_max_ms
+    live.DROP_TEST_IP = args.drop_test_ip
+    live.DROP_TEST_MAX_S = args.drop_test_max_s
 
     suite = unittest.defaultTestLoader.loadTestsFromModule(live)
     result = unittest.TextTestRunner(verbosity=2).run(suite)

@@ -180,13 +180,25 @@ python3 tests/run_xr18_integration.py \
   --xr18-bus 2 \
   --xr18-test-channel 18 \
   --sim-detents 12 \
-  --sim-duration-s 2.0
+  --sim-duration-s 2.0 \
+  --group-channels 6,7,8 \
+  --latency-queries 10 \
+  --latency-max-ms 350 \
+  --drop-test-ip 192.0.2.1 \
+  --drop-test-max-s 6
 ```
 
 What it validates:
 - OSC connectivity/query works
-- simulated knob movement changes mixer level (`--sim-detents` supports signed + / -, with default step size 0.01)
+- simulated knob movement changes mixer level (`--sim-detents` supports signed + / -, default step size 0.01)
 - detent simulation can be spread over time with `--sim-duration-s`
+- boundary clamping at low/high limits
+- multi-step monotonic trajectory behavior
+- group consistency (when `--group-channels` has 2+ channels)
+- bus correctness (target bus changes, alternate bus stays stable)
+- query latency budget (`--latency-queries`, `--latency-max-ms`)
+- timeout behavior against unreachable peer (`--drop-test-ip`, `--drop-test-max-s`)
+- idempotent restore behavior across repeated cycles
 - level restore works after test
 
 Safety notes:
