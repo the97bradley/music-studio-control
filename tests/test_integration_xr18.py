@@ -11,6 +11,12 @@ XR18_IP = None
 XR18_BUS = 2
 XR18_TEST_CHANNEL = 18
 LOCAL_PORT = 9101
+SIM_DETENTS = 1          # signed: +up / -down
+STEP_SIZE = 0.03         # linear mixer units per detent
+
+
+def _clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
+    return lo if v < lo else hi if v > hi else v
 
 
 class TestXR18Integration(unittest.TestCase):
@@ -64,12 +70,20 @@ class TestXR18Integration(unittest.TestCase):
         ch = self.test_channel
         before = self.st.ch_level[ch]
 
-        add_group(self.osc, self.st, "test", 0.03)
+        delta = float(SIM_DETENTS) * float(STEP_SIZE)
+        expected = _clamp(before + delta)
+
+        add_group(self.osc, self.st, "test", delta)
         time.sleep(0.1)
         sync_faders(self.osc, self.st, channels=18)
         after = self.st.ch_level[ch]
 
-        self.assertNotEqual(before, after, "Expected channel level to change after simulated knob turn")
+        self.assertAlmostEqual(
+            after,
+            expected,
+            places=3,
+            msg=f"Expected {expected:.3f} after simulated move (detents={SIM_DETENTS}, step={STEP_SIZE})",
+        )
 
         set_group(self.osc, self.st, "test", before)
         time.sleep(0.1)

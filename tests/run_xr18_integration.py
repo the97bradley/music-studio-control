@@ -19,6 +19,8 @@ def main():
     parser.add_argument("--xr18-bus", type=int, default=2, help="XR18 bus (1..6)")
     parser.add_argument("--xr18-test-channel", type=int, default=18, help="Safe test channel (1..18)")
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
+    parser.add_argument("--sim-detents", type=int, default=1, help="Signed simulated detents (+up / -down)")
+    parser.add_argument("--step-size", type=float, default=0.03, help="Linear level step per detent")
     args = parser.parse_args()
 
     if not args.live_xr18:
@@ -29,6 +31,8 @@ def main():
     live.XR18_BUS = args.xr18_bus
     live.XR18_TEST_CHANNEL = args.xr18_test_channel
     live.LOCAL_PORT = args.local_port
+    live.SIM_DETENTS = args.sim_detents
+    live.STEP_SIZE = args.step_size
 
     suite = unittest.defaultTestLoader.loadTestsFromModule(live)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
