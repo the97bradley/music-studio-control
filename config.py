@@ -58,17 +58,8 @@ def startup():
     st.ensure_channels(18)
 
     try:
-        controls_path = os.environ.get("CONTROLS_CONFIG")
-        if controls_path:
-            apply_controls_config(st, controls_path)
-        else:
-            # Default priority: YAML first, then JSON fallback.
-            if os.path.exists("controls.yaml"):
-                apply_controls_config(st, "controls.yaml")
-            elif os.path.exists("controls.yml"):
-                apply_controls_config(st, "controls.yml")
-            else:
-                apply_controls_config(st, "controls.json")
+        controls_path = os.environ.get("CONTROLS_CONFIG", "controls.yaml")
+        apply_controls_config(st, controls_path)
     except Exception as exc:
         raise StartupError("startup.controls", exc)
 

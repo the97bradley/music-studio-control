@@ -10,7 +10,7 @@ class TestMainGranularErrors(unittest.TestCase):
         self.st.ensure_channels(18)
         self.st.knob_to_group = {"knob1": "vocal"}
         self.st.groups = {"vocal": [1]}
-        self.st.knob_step = {"knob1": 0.03}
+        self.st.knob_step = 0.01
         self.calls = []
 
     def _report(self, where, exc, st=None):

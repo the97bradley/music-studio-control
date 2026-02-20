@@ -7,7 +7,7 @@ def process_knob_event(osc, st, knob_id: str, direction: int, add_group_fn, set_
         report_error_fn("loop.apply.mapping", RuntimeError(f"unknown knob: {knob_id}"), st)
         return
 
-    step = st.knob_step.get(knob_id, 0.03)
+    step = float(getattr(st, "knob_step", 0.01))
     try:
         add_group_fn(osc, st, group_name, direction * step)
     except Exception as exc:

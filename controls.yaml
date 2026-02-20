@@ -18,12 +18,4 @@ knob_to_group:
   knob7: click
   knob8: playback
 
-knob_step:
-  knob1: 0.01
-  knob2: 0.01
-  knob3: 0.01
-  knob4: 0.01
-  knob5: 0.01
-  knob6: 0.01
-  knob7: 0.01
-  knob8: 0.01
+knob_step: 0.01

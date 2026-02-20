@@ -39,8 +39,8 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 
 - `main.py` — main control loop
 - `osc.py` — OSC transport + query + keepalive
-- `state.py` — runtime state (`ch_level`, names, mappings, per-knob step)
-- `controls.yaml` / `controls.json` — editable mappings/sensitivity
+- `state.py` — runtime state (`ch_level`, names, mappings, global knob step)
+- `controls.yaml` — editable mappings/sensitivity
 - `controls.py` — loads/validates controls config
 - `faders.py` — group-level mixer writes
 - `sync.py` — periodic readback from mixer
@@ -58,7 +58,7 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 ### Optional (with defaults)
 - `XR18_BUS=2` — monitor bus (1..6)
 - `LOCAL_PORT=9100` — local UDP port
-- `CONTROLS_CONFIG=<path>` — optional explicit controls file (.yaml/.yml/.json). If unset, loader tries `controls.yaml`, then `controls.yml`, then `controls.json`.
+- `CONTROLS_CONFIG=<path>` — optional explicit controls YAML file (default: `controls.yaml`).
 - `ENCODER_BACKEND=null` — encoder backend selector
 - `DISPLAY_BACKEND=null` — display backend selector (`console` is useful for testing)
 - `ALERT_BACKEND=console` — fallback alert channel when display writes fail
@@ -70,32 +70,27 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 
 ---
 
-## controls.yaml (or controls.json)
+## controls.yaml
 
 This is where you customize behavior without editing Python.
 
 You can define:
 - `groups` (which channels each logical control affects)
 - `knob_to_group` (which physical knob controls which group)
-- `knob_step` (sensitivity per knob)
+- `knob_step` (single global sensitivity for all knobs)
 
 Example:
 
-```json
-{
-  "groups": {
-    "vocal": [1],
-    "drums": [6, 7, 8, 9, 10, 11]
-  },
-  "knob_to_group": {
-    "knob1": "vocal",
-    "knob6": "drums"
-  },
-  "knob_step": {
-    "knob1": 0.03,
-    "knob6": 0.02
-  }
-}
+```yaml
+groups:
+  vocal: [1]
+  drums: [6, 7, 8, 9, 10, 11]
+
+knob_to_group:
+  knob1: vocal
+  knob6: drums
+
+knob_step: 0.01
 ```
 
 ---

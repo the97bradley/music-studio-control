@@ -43,17 +43,8 @@ class State:
         "knob8": "playback",
     })
 
-    # per-knob sensitivity in linear mixer level units (0..1)
-    knob_step: Dict[str, float] = field(default_factory=lambda: {
-        "knob1": 0.01,
-        "knob2": 0.01,
-        "knob3": 0.01,
-        "knob4": 0.01,
-        "knob5": 0.01,
-        "knob6": 0.01,
-        "knob7": 0.01,
-        "knob8": 0.01,
-    })
+    # global knob sensitivity in linear mixer level units (0..1)
+    knob_step: float = 0.01
 
     def ensure_channels(self, n: int = 18):
         for ch in range(1, n + 1):
