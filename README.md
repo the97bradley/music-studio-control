@@ -47,6 +47,8 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 - `knobs.py` — encoder backend adapter
 - `display.py` — display backend adapter
 - `error_handler.py` — centralized exception handling + on-screen error codes
+- `tests/unit/` — fast unit tests
+- `tests/integration/` — live XR18 integration tests + runner
 
 ---
 
@@ -164,7 +166,7 @@ A lightweight unit test suite is included under `tests/`.
 Run all tests:
 
 ```bash
-python3 -m unittest discover -s tests -p "test_*.py" -v
+python3 -m unittest discover -s tests/unit -p "test_*.py" -v
 ```
 
 Current test coverage includes:
@@ -199,7 +201,7 @@ Test selectors:
 Example:
 
 ```bash
-python3 tests/run_xr18_integration.py \
+python3 tests/integration/run_xr18_integration.py \
   --xr18-ip 192.168.x.x \
   -a \
   -b -12 2.0 \

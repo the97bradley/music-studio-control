@@ -12,8 +12,8 @@ try:
 except Exception:
     pass
 
-# Ensure project root is importable when running from tests/ on the Pi.
-ROOT = Path(__file__).resolve().parent.parent
+# Ensure project root is importable when running from tests/integration/ on the Pi.
+ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -137,7 +137,7 @@ def main():
     if suite.countTestCases() == 0:
         raise SystemExit(
             "No tests selected. Example: "
-            "python3 tests/run_xr18_integration.py --xr18-ip 192.168.50.62 -a -b -12 2.0 -d"
+            "python3 tests/integration/run_xr18_integration.py --xr18-ip 192.168.50.62 -a -b -12 2.0 -d"
         )
 
     print("=== XR18 Integration Test Run ===")
