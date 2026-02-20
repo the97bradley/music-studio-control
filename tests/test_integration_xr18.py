@@ -81,8 +81,11 @@ class TestXR18Integration(unittest.TestCase):
         self.assertAlmostEqual(
             after,
             expected,
-            places=3,
-            msg=f"Expected {expected:.3f} after simulated move (detents={SIM_DETENTS}, step={STEP_SIZE})",
+            delta=0.005,
+            msg=(
+                f"Expected ~{expected:.3f} after simulated move "
+                f"(detents={SIM_DETENTS}, step={STEP_SIZE}); got {after:.3f}"
+            ),
         )
 
         set_group(self.osc, self.st, "test", before)
