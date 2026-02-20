@@ -7,8 +7,14 @@ from state import State
 from sync import sync_faders
 
 
+class StartupError(RuntimeError):
+    def __init__(self, where: str, cause: Exception):
+        super().__init__(f"{where}: {cause}")
+        self.where = where
+        self.cause = cause
+
+
 def wait_for_xr18(osc: OscClient, bus: int):
-    # use OSC probe (not ping) — XR18 replies to requester port
     probe = f"/ch/01/mix/{bus:02d}/level"
     while True:
         osc.send("/xremote", 0)
@@ -30,7 +36,6 @@ def load_bus_and_ip():
 
 
 def fetch_channel_names(osc: OscClient, st: State, channels: int = 18):
-    # /ch/xx/config/name is used by X32/X-Air family
     for ch in range(1, channels + 1):
         addr = f"/ch/{ch:02d}/config/name"
         v = osc.query(addr, tries=2)
@@ -39,18 +44,39 @@ def fetch_channel_names(osc: OscClient, st: State, channels: int = 18):
 
 
 def startup():
-    ip, bus, local_port = load_bus_and_ip()
-    osc = OscClient(ip, local_port=local_port, timeout_s=2.0)
+    try:
+        ip, bus, local_port = load_bus_and_ip()
+    except Exception as exc:
+        raise StartupError("startup.load_env", exc)
+
+    try:
+        osc = OscClient(ip, local_port=local_port, timeout_s=2.0)
+    except Exception as exc:
+        raise StartupError("startup.osc_client", exc)
 
     st = State(bus=bus)
     st.ensure_channels(18)
-    controls_path = os.environ.get("CONTROLS_CONFIG", "controls.json")
-    apply_controls_config(st, controls_path)
 
-    wait_for_xr18(osc, bus)
-    osc.start_keepalive(5.0)
+    try:
+        controls_path = os.environ.get("CONTROLS_CONFIG", "controls.json")
+        apply_controls_config(st, controls_path)
+    except Exception as exc:
+        raise StartupError("startup.controls", exc)
 
-    sync_faders(osc, st, 18)
-    fetch_channel_names(osc, st, 18)
+    try:
+        wait_for_xr18(osc, bus)
+        osc.start_keepalive(5.0)
+    except Exception as exc:
+        raise StartupError("startup.wait_xr18", exc)
+
+    try:
+        sync_faders(osc, st, 18)
+    except Exception as exc:
+        raise StartupError("startup.initial_sync", exc)
+
+    try:
+        fetch_channel_names(osc, st, 18)
+    except Exception as exc:
+        raise StartupError("startup.channel_names", exc)
 
     return osc, st

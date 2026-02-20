@@ -110,11 +110,27 @@ Example:
 
 All major exceptions flow through a centralized handler and are routed to screen 1 (`knob1` by default).
 
-Error codes:
-- `E101` — startup failure
-- `E102` — display init failure
-- `E201` — main loop failure
-- `E999` — unknown fallback
+### Granular error codes
+
+**Startup**
+- `E111` — `startup.load_env` (bad/missing env like `XR18_IP`, invalid bus)
+- `E112` — `startup.osc_client` (socket create/bind failures)
+- `E113` — `startup.controls` (invalid controls config)
+- `E114` — `startup.wait_xr18` (mixer link probe/keepalive startup issues)
+- `E115` — `startup.initial_sync` (initial fader sync failure)
+- `E116` — `startup.channel_names` (channel name fetch failure)
+
+**Display / init**
+- `E121` — `display.init` (startup screen rendering failure)
+
+**Runtime loop**
+- `E211` — `loop.sync` (periodic mixer sync failure)
+- `E212` — `loop.render` (display refresh failure)
+- `E213` — `loop.poll` (encoder polling failure)
+- `E214` — `loop.apply` (apply knob movement/write failure)
+
+**Fallback**
+- `E999` — unknown/unmapped context
 
 This makes it possible to diagnose failures from the device itself without SSH.
 

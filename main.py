@@ -1,7 +1,7 @@
 import os
 import time
 
-from config import startup
+from config import StartupError, startup
 from display import percent_from_value, set_screen_display, set_screen_text
 from error_handler import report_error
 from faders import add_group
@@ -37,6 +37,9 @@ def _render_levels(st):
 def main():
     try:
         osc, st = startup()
+    except StartupError as exc:
+        report_error(exc.where, exc.cause)
+        raise
     except Exception as exc:
         report_error("startup", exc)
         raise
@@ -48,37 +51,47 @@ def main():
         _render_startup(st)
         _render_levels(st)
     except Exception as exc:
-        report_error("display_init", exc, st)
+        report_error("display.init", exc, st)
 
     last_sync = 0.0
     deadman_active = False
 
     while True:
-        try:
-            now = time.time()
+        now = time.time()
 
-            if now - last_sync >= SYNC_EVERY_S:
+        if now - last_sync >= SYNC_EVERY_S:
+            try:
                 ok = sync_faders(osc, st, 18)
                 last_sync = now
                 if ok:
                     if deadman_active:
                         print("[sync] recovered from stale state")
                     deadman_active = False
-                    _render_levels(st)
+                    try:
+                        _render_levels(st)
+                    except Exception as exc:
+                        report_error("loop.render", exc, st)
                 else:
                     age = now - st.last_ok_sync_ts
                     if age >= DEADMAN_TIMEOUT_S and not deadman_active:
                         deadman_active = True
                         print(f"[deadman] mixer sync stale for {age:.1f}s")
                         _render_error(st, "XR18 LINK")
+            except Exception as exc:
+                report_error("loop.sync", exc, st)
 
+        try:
             events = poll_knobs()
-            if deadman_active and events:
-                # fail-safe: ignore writes while stale link is active
-                time.sleep(LOOP_SLEEP_S)
-                continue
+        except Exception as exc:
+            report_error("loop.poll", exc, st)
+            events = []
 
-            for knob_id, direction in events:
+        if deadman_active and events:
+            time.sleep(LOOP_SLEEP_S)
+            continue
+
+        for knob_id, direction in events:
+            try:
                 group_name = st.knob_to_group.get(knob_id)
                 if not group_name:
                     continue
@@ -90,9 +103,8 @@ def main():
                 rep_ch = chans[0]
                 pct = percent_from_value(st.ch_level[rep_ch])
                 set_screen_display(knob_id, group_name.upper(), pct)
-
-        except Exception as exc:
-            report_error("main_loop", exc, st)
+            except Exception as exc:
+                report_error("loop.apply", exc, st)
 
         time.sleep(LOOP_SLEEP_S)
 
