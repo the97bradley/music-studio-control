@@ -1,7 +1,7 @@
 import unittest
 
-from state import State
-from sync import sync_faders
+from app.core.state import State
+from app.core.sync import sync_faders
 
 
 class FakeOsc:

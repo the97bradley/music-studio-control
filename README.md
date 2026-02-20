@@ -45,7 +45,6 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 - `tests/unit/` — fast unit tests
 - `tests/integration/` — live XR18 integration tests + runner
 
-(Compatibility shims remain at repo root so existing scripts still work.)
 
 ---
 

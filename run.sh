@@ -105,4 +105,4 @@ export PYTHONUNBUFFERED=1
 ########################################
 
 log "Starting XR18 endpoint..."
-exec python3 main.py
+exec python3 -m app.main

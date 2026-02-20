@@ -1,7 +1,7 @@
 import unittest
 
-from apply_logic import process_knob_event
-from state import State
+from app.core.apply_logic import process_knob_event
+from app.core.state import State
 
 
 class TestMainGranularErrors(unittest.TestCase):

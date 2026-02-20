@@ -1,8 +1,8 @@
 import time
 import unittest
 
-from faders import add_group, set_group
-from state import State
+from app.core.faders import add_group, set_group
+from app.core.state import State
 
 XR18_IP = None
 LOCAL_PORT = 9101
@@ -40,7 +40,7 @@ class TestXR18Integration(unittest.TestCase):
             _log("XR18 IP not provided", "WARN")
             raise unittest.SkipTest("XR18 IP not provided")
 
-        from osc import OscClient
+        from app.io.osc import OscClient
 
         cls.osc = OscClient(XR18_IP, local_port=int(LOCAL_PORT), timeout_s=2.0)
         cls.group_channels = cls._parse_group_channels(GROUP_CHANNELS)
@@ -345,7 +345,7 @@ class TestXR18Integration(unittest.TestCase):
                 _log(f"idempotent PASS bus={bus} ch={ch}", "PASS")
 
     def test_reconnect_resume(self):
-        from osc import OscClient
+        from app.io.osc import OscClient
 
         bus = TEST_BUSES[0]
         ch = TEST_CHANNELS[0]
@@ -428,7 +428,7 @@ class TestXR18Integration(unittest.TestCase):
         _log("drums profile sweep PASS", "PASS")
 
     def test_timeout_behavior_on_unreachable_peer(self):
-        from osc import OscClient
+        from app.io.osc import OscClient
 
         _log(f"timeout behavior test ip={DROP_TEST_IP}")
         bad = OscClient(DROP_TEST_IP, local_port=int(LOCAL_PORT) + 11, timeout_s=1.0)

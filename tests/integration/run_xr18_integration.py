@@ -150,9 +150,10 @@ def main():
     result = PrettyTextRunner(verbosity=0).run(suite)
     dt = time.time() - t0
 
+    passed = max(0, result.testsRun - len(result.failures) - len(result.errors) - len(result.skipped))
     print("=== Summary ===")
     print(
-        f"ran={result.testsRun} pass={result.testsRun - len(result.failures) - len(result.errors) - len(result.skipped)} "
+        f"ran={result.testsRun} pass={passed} "
         f"fail={len(result.failures)} error={len(result.errors)} skip={len(result.skipped)} time={dt:.2f}s"
     )
 

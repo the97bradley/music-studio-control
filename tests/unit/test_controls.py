@@ -1,8 +1,8 @@
 import tempfile
 import unittest
 
-from controls import apply_controls_config
-from state import State
+from app.config.controls import apply_controls_config
+from app.core.state import State
 
 try:
     import yaml  # noqa: F401
