@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime
 
 from display import fallback_alert, set_screen_text
 
@@ -42,6 +43,19 @@ def _code_for(where: str) -> str:
     return ERROR_CODES.get(where, "E999")
 
 
+def _second_screen(st=None) -> str:
+    if st is not None and getattr(st, "knob_to_group", None):
+        try:
+            keys = list(st.knob_to_group.keys())
+            if len(keys) >= 2:
+                return keys[1]
+            if len(keys) == 1:
+                return keys[0]
+        except Exception:
+            pass
+    return "knob2"
+
+
 def report_error(where: str, exc: Exception, st=None):
     err_type = type(exc).__name__
     msg = str(exc).strip() or "no details"
@@ -50,12 +64,14 @@ def report_error(where: str, exc: Exception, st=None):
     print(f"[error] {code} {where}: {err_type}: {msg}")
     print(traceback.format_exc())
 
-    screen = _first_screen(st)
-    line1 = code
-    line2 = err_type[:10]
+    screen1 = _first_screen(st)
+    screen2 = _second_screen(st)
+    ts = datetime.now().strftime("%H:%M:%S")
+
     try:
-        ok = set_screen_text(screen, line1, line2)
-        if not ok:
-            fallback_alert("E311", f"{code}:{err_type}")
+        ok1 = set_screen_text(screen1, code, "ERROR")
+        ok2 = set_screen_text(screen2, "LOG TS", ts)
+        if not (ok1 and ok2):
+            fallback_alert("E311", f"{code}:{err_type}@{ts}")
     except Exception:
-        fallback_alert("E311", f"{code}:{err_type}")
+        fallback_alert("E311", f"{code}:{err_type}@{ts}")

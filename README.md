@@ -117,7 +117,9 @@ knob_step: 0.01
 
 ## Error handling (headless-friendly)
 
-All major exceptions flow through a centralized handler and are routed to screen 1 (`knob1` by default).
+All major exceptions flow through a centralized handler:
+- screen 1 (`knob1`): error code
+- screen 2 (`knob2`): log timestamp (`HH:MM:SS`) to correlate with file logs
 
 ### Granular error codes
 
