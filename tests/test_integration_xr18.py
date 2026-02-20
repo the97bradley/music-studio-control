@@ -3,7 +3,6 @@ import unittest
 
 from faders import add_group, set_group
 from state import State
-from sync import sync_faders
 
 XR18_IP = None
 LOCAL_PORT = 9101
@@ -88,6 +87,14 @@ class TestXR18Integration(unittest.TestCase):
         return None if v is None else float(v)
 
     @classmethod
+    def _sync_channel(cls, st: State, ch: int):
+        v = cls._query_level(ch, st.bus)
+        if v is None:
+            return None
+        st.ch_level[ch] = float(v)
+        return st.ch_level[ch]
+
+    @classmethod
     def _state_for(cls, bus: int, ch: int):
         st = State(bus=bus)
         st.ensure_channels(18)
@@ -97,15 +104,14 @@ class TestXR18Integration(unittest.TestCase):
         if v is None:
             return None
         st.ch_level[ch] = float(v)
-        sync_faders(cls.osc, st, channels=18)
         return st
 
     @classmethod
     def _restore_channel(cls, st: State, ch: int, value: float):
+        _log(f"restoring bus={st.bus} ch={ch} -> {value:.4f}")
         set_group(cls.osc, st, "test", value)
         time.sleep(0.1)
-        sync_faders(cls.osc, st, channels=18)
-        restored = st.ch_level[ch]
+        restored = cls._sync_channel(st, ch)
         return restored
 
     def test_connectivity_query_level(self):
@@ -143,8 +149,8 @@ class TestXR18Integration(unittest.TestCase):
                             time.sleep(interval)
 
                 time.sleep(0.1)
-                sync_faders(self.osc, st, channels=18)
-                after = st.ch_level[ch]
+                _log(f"querying post-linear level bus={bus} ch={ch}")
+                after = self._sync_channel(st, ch)
                 _log(f"linear end bus={bus} ch={ch} after={after:.4f}")
 
                 self.assertAlmostEqual(
@@ -160,7 +166,7 @@ class TestXR18Integration(unittest.TestCase):
                 restored = self._restore_channel(st, ch, before)
                 _log(f"linear restore bus={bus} ch={ch} restored={restored:.4f} target={before:.4f}")
                 self.assertAlmostEqual(restored, before, places=3)
-                _log(f"boundary PASS bus={bus} ch={ch}", "PASS")
+                _log(f"linear motion PASS bus={bus} ch={ch}", "PASS")
 
     def test_simulated_back_and_forth_motion_and_restore(self):
         steps = max(1, abs(int(SIM_DETENTS)))
@@ -188,8 +194,8 @@ class TestXR18Integration(unittest.TestCase):
                         time.sleep(SIM_DURATION_S / (2 * steps))
 
                 time.sleep(0.1)
-                sync_faders(self.osc, st, channels=18)
-                after = st.ch_level[ch]
+                _log(f"querying post-back-forth level bus={bus} ch={ch}")
+                after = self._sync_channel(st, ch)
                 _log(f"back-forth end bus={bus} ch={ch} after={after:.4f} baseline={baseline:.4f}")
                 self.assertAlmostEqual(after, baseline, delta=0.01)
 
@@ -211,16 +217,16 @@ class TestXR18Integration(unittest.TestCase):
 
                 set_group(self.osc, st, "test", -0.25)
                 time.sleep(0.1)
-                sync_faders(self.osc, st, channels=18)
-                low = st.ch_level[ch]
+                _log(f"querying low-clamp level bus={bus} ch={ch}")
+                low = self._sync_channel(st, ch)
                 _log(f"boundary low bus={bus} ch={ch} value={low:.4f}")
                 self.assertGreaterEqual(low, 0.0)
                 self.assertLessEqual(low, 0.01)
 
                 set_group(self.osc, st, "test", 1.25)
                 time.sleep(0.1)
-                sync_faders(self.osc, st, channels=18)
-                high = st.ch_level[ch]
+                _log(f"querying high-clamp level bus={bus} ch={ch}")
+                high = self._sync_channel(st, ch)
                 _log(f"boundary high bus={bus} ch={ch} value={high:.4f}")
                 self.assertLessEqual(high, 1.0)
                 self.assertGreaterEqual(high, 0.99)
@@ -328,11 +334,10 @@ class TestXR18Integration(unittest.TestCase):
                 for _ in range(2):
                     add_group(self.osc, st, "test", 0.02)
                     time.sleep(0.05)
-                    sync_faders(self.osc, st, channels=18)
+                    _ = self._sync_channel(st, ch)
                     set_group(self.osc, st, "test", baseline)
                     time.sleep(0.05)
-                    sync_faders(self.osc, st, channels=18)
-                    cur = st.ch_level[ch]
+                    cur = self._sync_channel(st, ch)
                     self.assertAlmostEqual(cur, baseline, places=3)
                 _log(f"idempotent PASS bus={bus} ch={ch}", "PASS")
 
