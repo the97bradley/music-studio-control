@@ -1,6 +1,6 @@
 import unittest
 
-import error_handler
+from app.core import error_handler
 
 
 class TestErrorHandler(unittest.TestCase):

@@ -37,18 +37,15 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 
 ## File map (quick)
 
-- `main.py` — main control loop
-- `osc.py` — OSC transport + query + keepalive
-- `state.py` — runtime state (`ch_level`, names, mappings, global knob step)
-- `controls.yaml` — editable mappings/sensitivity
-- `controls.py` — loads/validates controls config
-- `faders.py` — group-level mixer writes
-- `sync.py` — periodic readback from mixer
-- `knobs.py` — encoder backend adapter
-- `display.py` — display backend adapter
-- `error_handler.py` — centralized exception handling + on-screen error codes
+- `app/main.py` — main control loop
+- `app/core/` — state, faders, sync, apply logic, error handling, logging
+- `app/io/` — OSC, hardware/display/knob adapters
+- `app/config/` — startup + controls loading
+- `controls.yaml` — editable runtime + mapping config
 - `tests/unit/` — fast unit tests
 - `tests/integration/` — live XR18 integration tests + runner
+
+(Compatibility shims remain at repo root so existing scripts still work.)
 
 ---
 
