@@ -15,6 +15,7 @@ LATENCY_QUERIES = 8
 LATENCY_MAX_MS = 350.0
 DROP_TEST_IP = "192.0.2.1"
 DROP_TEST_MAX_S = 6.0
+VERBOSE = True
 
 # Fixed live coverage set (sequential, not concurrent)
 TEST_BUSES = [1, 2]
@@ -23,6 +24,11 @@ TEST_CHANNELS = [1, 16]
 
 def _clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return lo if v < lo else hi if v > hi else v
+
+
+def _log(msg: str):
+    if VERBOSE:
+        print(f"[integration] {msg}")
 
 
 class TestXR18Integration(unittest.TestCase):
@@ -36,15 +42,15 @@ class TestXR18Integration(unittest.TestCase):
         cls.osc = OscClient(XR18_IP, local_port=int(LOCAL_PORT), timeout_s=2.0)
         cls.group_channels = cls._parse_group_channels(GROUP_CHANNELS)
 
-        print(f"[integration] XR18 target ip={XR18_IP} local_port={LOCAL_PORT}")
-        print(f"[integration] test buses={TEST_BUSES} channels={TEST_CHANNELS}")
+        _log(f"XR18 target ip={XR18_IP} local_port={LOCAL_PORT}")
+        _log(f"test buses={TEST_BUSES} channels={TEST_CHANNELS}")
 
         # preflight: at least one bus/channel query must succeed
         any_ok = False
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
                 v = cls._query_level(ch, bus)
-                print(f"[integration] preflight query bus={bus} ch={ch} -> {v}")
+                _log(f"preflight query bus={bus} ch={ch} -> {v}")
                 if v is not None:
                     any_ok = True
                     break
@@ -101,7 +107,7 @@ class TestXR18Integration(unittest.TestCase):
     def test_connectivity_query_level(self):
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
-                print(f"[integration] connectivity check bus={bus} ch={ch}")
+                _log(f"connectivity check bus={bus} ch={ch}")
                 v = self._query_level(ch, bus)
                 self.assertIsNotNone(v, f"XR18 did not return level query for bus={bus}, ch={ch}")
 
@@ -114,24 +120,27 @@ class TestXR18Integration(unittest.TestCase):
 
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
-                print(f"[integration] linear motion bus={bus} ch={ch} detents={detents}")
+                _log(f"linear motion bus={bus} ch={ch} detents={detents}")
                 st = self._state_for(bus, ch)
                 if st is None:
                     self.skipTest(f"No query response for bus={bus}, ch={ch}")
 
                 before = st.ch_level[ch]
                 expected = _clamp(before + total_delta)
+                _log(f"linear start bus={bus} ch={ch} before={before:.4f} total_delta={total_delta:.4f} expected={expected:.4f}")
 
                 if steps > 0:
                     interval = max(0.0, float(SIM_DURATION_S)) / steps
-                    for _ in range(steps):
+                    for i in range(steps):
                         add_group(self.osc, st, "test", step_delta)
+                        _log(f"linear step {i+1}/{steps} bus={bus} ch={ch} step_delta={step_delta:+.4f}")
                         if interval > 0:
                             time.sleep(interval)
 
                 time.sleep(0.1)
                 sync_faders(self.osc, st, channels=18)
                 after = st.ch_level[ch]
+                _log(f"linear end bus={bus} ch={ch} after={after:.4f}")
 
                 self.assertAlmostEqual(
                     after,
@@ -144,6 +153,7 @@ class TestXR18Integration(unittest.TestCase):
                 )
 
                 restored = self._restore_channel(st, ch, before)
+                _log(f"linear restore bus={bus} ch={ch} restored={restored:.4f} target={before:.4f}")
                 self.assertAlmostEqual(restored, before, places=3)
 
     def test_simulated_back_and_forth_motion_and_restore(self):
@@ -152,44 +162,51 @@ class TestXR18Integration(unittest.TestCase):
 
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
-                print(f"[integration] back-forth motion bus={bus} ch={ch} steps={steps}")
+                _log(f"back-forth motion bus={bus} ch={ch} steps={steps}")
                 st = self._state_for(bus, ch)
                 if st is None:
                     self.skipTest(f"No query response for bus={bus}, ch={ch}")
 
                 baseline = st.ch_level[ch]
+                _log(f"back-forth start bus={bus} ch={ch} baseline={baseline:.4f} steps={steps} step={delta:.4f}")
 
-                for _ in range(steps):
+                for i in range(steps):
                     add_group(self.osc, st, "test", delta)
+                    _log(f"back-forth up step {i+1}/{steps} bus={bus} ch={ch} delta={delta:+.4f}")
                     if SIM_DURATION_S > 0:
                         time.sleep(SIM_DURATION_S / (2 * steps))
-                for _ in range(steps):
+                for i in range(steps):
                     add_group(self.osc, st, "test", -delta)
+                    _log(f"back-forth down step {i+1}/{steps} bus={bus} ch={ch} delta={-delta:+.4f}")
                     if SIM_DURATION_S > 0:
                         time.sleep(SIM_DURATION_S / (2 * steps))
 
                 time.sleep(0.1)
                 sync_faders(self.osc, st, channels=18)
                 after = st.ch_level[ch]
+                _log(f"back-forth end bus={bus} ch={ch} after={after:.4f} baseline={baseline:.4f}")
                 self.assertAlmostEqual(after, baseline, delta=0.01)
 
                 restored = self._restore_channel(st, ch, baseline)
+                _log(f"back-forth restore bus={bus} ch={ch} restored={restored:.4f}")
                 self.assertAlmostEqual(restored, baseline, places=3)
 
     def test_boundary_clamp_low_high(self):
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
-                print(f"[integration] clamp boundary test bus={bus} ch={ch}")
+                _log(f"clamp boundary test bus={bus} ch={ch}")
                 st = self._state_for(bus, ch)
                 if st is None:
                     self.skipTest(f"No query response for bus={bus}, ch={ch}")
 
                 before = st.ch_level[ch]
+                _log(f"boundary start bus={bus} ch={ch} before={before:.4f}")
 
                 set_group(self.osc, st, "test", -0.25)
                 time.sleep(0.1)
                 sync_faders(self.osc, st, channels=18)
                 low = st.ch_level[ch]
+                _log(f"boundary low bus={bus} ch={ch} value={low:.4f}")
                 self.assertGreaterEqual(low, 0.0)
                 self.assertLessEqual(low, 0.01)
 
@@ -197,10 +214,12 @@ class TestXR18Integration(unittest.TestCase):
                 time.sleep(0.1)
                 sync_faders(self.osc, st, channels=18)
                 high = st.ch_level[ch]
+                _log(f"boundary high bus={bus} ch={ch} value={high:.4f}")
                 self.assertLessEqual(high, 1.0)
                 self.assertGreaterEqual(high, 0.99)
 
                 restored = self._restore_channel(st, ch, before)
+                _log(f"boundary restore bus={bus} ch={ch} restored={restored:.4f}")
                 self.assertAlmostEqual(restored, before, places=3)
 
     def test_group_consistency_multi_channel(self):
@@ -208,7 +227,7 @@ class TestXR18Integration(unittest.TestCase):
             self.skipTest("Provide --group-channels with 2+ channels to run group consistency test")
 
         for bus in TEST_BUSES:
-            print(f"[integration] group consistency bus={bus} channels={self.group_channels}")
+            _log(f"group consistency bus={bus} channels={self.group_channels}")
             st = State(bus=bus)
             st.ensure_channels(18)
             st.groups = {"test": self.group_channels}
@@ -242,7 +261,7 @@ class TestXR18Integration(unittest.TestCase):
         alt_bus = TEST_BUSES[1]
 
         for ch in TEST_CHANNELS:
-            print(f"[integration] bus correctness target={target_bus} alt={alt_bus} ch={ch}")
+            _log(f"bus correctness target={target_bus} alt={alt_bus} ch={ch}")
             st = self._state_for(target_bus, ch)
             if st is None:
                 self.skipTest(f"No query response for bus={target_bus}, ch={ch}")
@@ -268,16 +287,18 @@ class TestXR18Integration(unittest.TestCase):
     def test_query_latency_budget(self):
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
-                print(f"[integration] latency test bus={bus} ch={ch} n={LATENCY_QUERIES}")
+                _log(f"latency test bus={bus} ch={ch} n={LATENCY_QUERIES}")
                 samples = []
-                for _ in range(int(LATENCY_QUERIES)):
+                for i in range(int(LATENCY_QUERIES)):
                     t0 = time.time()
                     v = self._query_level(ch, bus)
                     dt_ms = (time.time() - t0) * 1000.0
                     self.assertIsNotNone(v, f"Latency test query returned None for bus={bus}, ch={ch}")
                     samples.append(dt_ms)
+                    _log(f"latency sample bus={bus} ch={ch} i={i+1}/{LATENCY_QUERIES} dt_ms={dt_ms:.1f} value={v:.4f}")
 
                 p95 = sorted(samples)[max(0, int(len(samples) * 0.95) - 1)]
+                _log(f"latency summary bus={bus} ch={ch} p95={p95:.1f}ms samples={samples}")
                 self.assertLessEqual(
                     p95,
                     float(LATENCY_MAX_MS),
@@ -287,7 +308,7 @@ class TestXR18Integration(unittest.TestCase):
     def test_idempotent_restore_two_cycles(self):
         for bus in TEST_BUSES:
             for ch in TEST_CHANNELS:
-                print(f"[integration] idempotent restore bus={bus} ch={ch}")
+                _log(f"idempotent restore bus={bus} ch={ch}")
                 st = self._state_for(bus, ch)
                 if st is None:
                     self.skipTest(f"No query response for bus={bus}, ch={ch}")
@@ -306,7 +327,7 @@ class TestXR18Integration(unittest.TestCase):
     def test_timeout_behavior_on_unreachable_peer(self):
         from osc import OscClient
 
-        print(f"[integration] timeout behavior test ip={DROP_TEST_IP}")
+        _log(f"timeout behavior test ip={DROP_TEST_IP}")
         bad = OscClient(DROP_TEST_IP, local_port=int(LOCAL_PORT) + 11, timeout_s=1.0)
         try:
             bus = TEST_BUSES[0]

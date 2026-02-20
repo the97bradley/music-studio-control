@@ -22,6 +22,7 @@ def main():
     )
     parser.add_argument("--xr18-ip", required=True, help="XR18 mixer IP")
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
+    parser.add_argument("--quiet", action="store_true", help="Reduce integration progress logging")
 
     # Per-test selectors (short + long)
     parser.add_argument("-a", "--connectivity", action="store_true", help="Run connectivity query test")
@@ -39,6 +40,7 @@ def main():
     # Base config
     live.XR18_IP = args.xr18_ip
     live.LOCAL_PORT = args.local_port
+    live.VERBOSE = not args.quiet
 
     suite = unittest.TestSuite()
 

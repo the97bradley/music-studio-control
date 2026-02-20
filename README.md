@@ -174,6 +174,7 @@ There is also a live integration test runner with **one flag per test** (short +
 Base args:
 - `--xr18-ip <ip>` (required)
 - `--local-port <port>` (optional)
+- `--quiet` (optional, reduce verbose per-step logs)
 
 Test selectors:
 - `-a`, `--connectivity`
@@ -216,7 +217,7 @@ What it validates:
 - idempotent restore behavior across repeated cycles
 - level restore works after test
 
-The suite prints progress lines while running so you can see each bus/channel step.
+The suite is verbose by default and prints per-step internals (bus/channel, before/after levels, deltas, restores, latency samples). Use `--quiet` to reduce output.
 
 Safety notes:
 - runs sequentially (not concurrent) across configured buses/channels
