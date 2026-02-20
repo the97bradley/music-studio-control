@@ -40,7 +40,7 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 - `main.py` — main control loop
 - `osc.py` — OSC transport + query + keepalive
 - `state.py` — runtime state (`ch_level`, names, mappings, per-knob step)
-- `controls.json` — editable mappings/sensitivity
+- `controls.yaml` / `controls.json` — editable mappings/sensitivity
 - `controls.py` — loads/validates controls config
 - `faders.py` — group-level mixer writes
 - `sync.py` — periodic readback from mixer
@@ -58,7 +58,7 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 ### Optional (with defaults)
 - `XR18_BUS=2` — monitor bus (1..6)
 - `LOCAL_PORT=9100` — local UDP port
-- `CONTROLS_CONFIG=controls.json` — path to controls mapping file
+- `CONTROLS_CONFIG=<path>` — optional explicit controls file (.yaml/.yml/.json). If unset, loader tries `controls.yaml`, then `controls.yml`, then `controls.json`.
 - `ENCODER_BACKEND=null` — encoder backend selector
 - `DISPLAY_BACKEND=null` — display backend selector (`console` is useful for testing)
 - `ALERT_BACKEND=console` — fallback alert channel when display writes fail
@@ -70,7 +70,7 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 
 ---
 
-## controls.json
+## controls.yaml (or controls.json)
 
 This is where you customize behavior without editing Python.
 
@@ -205,15 +205,14 @@ python3 tests/run_xr18_integration.py \
 
 What it validates:
 - OSC connectivity/query works
-- simulated linear motion changes mixer level (`--sim-detents` supports signed + / -, default step size 0.01)
+- simulated linear motion changes mixer level (signed detents, default step size 0.01)
 - simulated back-and-forth motion returns near baseline
-- detent simulation can be spread over time with `--sim-duration-s`
 - boundary clamping at low/high limits
 - multi-step monotonic trajectory behavior
-- group consistency (when `--group-channels` has 2+ channels)
+- group consistency (when group test is selected with CSV channels)
 - bus correctness (target bus changes, alternate bus stays stable)
-- query latency budget (`--latency-queries`, `--latency-max-ms`)
-- timeout behavior against unreachable peer (`--drop-test-ip`, `--drop-test-max-s`)
+- query latency budget
+- timeout behavior against unreachable peer
 - idempotent restore behavior across repeated cycles
 - level restore works after test
 

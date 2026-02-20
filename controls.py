@@ -20,11 +20,29 @@ def _load_json(path: str) -> Dict[str, Any]:
         return json.load(f)
 
 
+def _load_yaml(path: str) -> Dict[str, Any]:
+    try:
+        import yaml  # PyYAML
+    except Exception as exc:
+        raise RuntimeError("PyYAML is required for .yaml controls files") from exc
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    return data or {}
+
+
+def _load_controls(path: str) -> Dict[str, Any]:
+    ext = os.path.splitext(path)[1].lower()
+    if ext in (".yaml", ".yml"):
+        return _load_yaml(path)
+    return _load_json(path)
+
+
 def apply_controls_config(st: State, path: str):
     if not os.path.exists(path):
         return
 
-    data = _load_json(path)
+    data = _load_controls(path)
 
     groups = data.get("groups")
     if isinstance(groups, dict):
