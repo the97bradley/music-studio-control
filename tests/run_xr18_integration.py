@@ -120,9 +120,12 @@ def main():
 
     print("=== XR18 Integration Test Run ===")
     print(f"target={args.xr18_ip} local_port={args.local_port} selected_cases={suite.countTestCases()}")
+    print("selected_tests:")
+    for t in suite:
+        print(f"  - {t.id()}")
 
     t0 = time.time()
-    result = PrettyTextRunner(verbosity=1).run(suite)
+    result = PrettyTextRunner(verbosity=0).run(suite)
     dt = time.time() - t0
 
     print("=== Summary ===")
