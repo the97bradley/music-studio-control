@@ -17,6 +17,11 @@ display:
   backoff_ms: 40
   fail_threshold: 3
 
+logging:
+  path: logs/endpoint.log
+  max_bytes: 1073741824  # 1GB
+  backup_count: 1
+
 groups:
   vocal: [1]
   keys: [2]

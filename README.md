@@ -66,6 +66,9 @@ Key fields:
 - `display.max_retries`
 - `display.backoff_ms`
 - `display.fail_threshold`
+- `logging.path`
+- `logging.max_bytes`
+- `logging.backup_count`
 - `groups`
 - `knob_to_group`
 - `knob_step` (single global step)
@@ -230,6 +233,18 @@ Safety notes:
 - runs sequentially (not concurrent) across configured buses/channels
 - run when no critical recording take is in progress
 - tests restore channel values after motion checks
+
+---
+
+## Logging
+
+The app writes timestamped logs to a rotating file configured in `controls.yaml`:
+
+- `logging.path` (default `logs/endpoint.log`)
+- `logging.max_bytes` (default `1073741824` = 1GB)
+- `logging.backup_count` (default `1`)
+
+Rotation keeps newest logs in `endpoint.log` and rolls older logs to `endpoint.log.1`.
 
 ---
 

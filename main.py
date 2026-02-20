@@ -13,6 +13,7 @@ from display import (
 from error_handler import report_error
 from faders import add_group
 from knobs import poll_knobs
+from logutil import setup_logging
 from sync import sync_faders
 
 SYNC_EVERY_S = float(get_controls_value("runtime.sync_every_s", 1.0))
@@ -42,6 +43,7 @@ def _render_levels(st):
 
 
 def main():
+    setup_logging()
     try:
         osc, st = startup()
     except StartupError as exc:
