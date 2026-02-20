@@ -11,6 +11,7 @@ from app.io.display import (
     set_screen_text,
 )
 from app.core.error_handler import report_error
+from app.core.error_policy import get_policy, sleep_backoff
 from app.core.faders import add_group
 from app.io.knobs import poll_knobs
 from app.core.logutil import setup_logging
@@ -40,6 +41,24 @@ def _render_levels(st):
         rep_ch = chans[0]
         pct = percent_from_value(st.ch_level[rep_ch])
         set_screen_display(knob_id, group_name.upper(), pct)
+
+
+def _run_with_policy(where: str, fn, st=None):
+    policy = get_policy(where)
+    last_exc = None
+    for attempt in range(policy.max_retries + 1):
+        try:
+            return True, fn(), attempt, policy
+        except Exception as exc:
+            last_exc = exc
+            if attempt < policy.max_retries:
+                sleep_backoff(policy, attempt)
+                continue
+            report_error(where, exc, st, meta={"attempt": attempt + 1, "severity": policy.severity, "mode": policy.mode})
+            if policy.mode == "fatal":
+                raise
+            return False, None, attempt, policy
+    return False, None, 0, policy
 
 
 def main():
@@ -73,30 +92,24 @@ def main():
         now = time.time()
 
         if now - last_sync >= SYNC_EVERY_S:
-            try:
-                ok = sync_faders(osc, st, 18)
-                last_sync = now
-                if ok:
-                    if deadman_active:
-                        print("[sync] recovered from stale state")
-                    deadman_active = False
-                    try:
-                        _render_levels(st)
-                    except Exception as exc:
-                        report_error("loop.render", exc, st)
-                else:
-                    age = now - st.last_ok_sync_ts
-                    if age >= DEADMAN_TIMEOUT_S and not deadman_active:
-                        deadman_active = True
-                        print(f"[deadman] mixer sync stale for {age:.1f}s")
-                        _render_error(st, "XR18 LINK")
-            except Exception as exc:
-                report_error("loop.sync", exc, st)
+            ok, sync_result, attempts, _ = _run_with_policy("loop.sync", lambda: sync_faders(osc, st, 18), st)
+            last_sync = now
+            if ok and sync_result:
+                if deadman_active:
+                    print(f"[recovery] loop.sync recovered after {attempts + 1} attempt(s)")
+                deadman_active = False
+                ok_render, _, _, _ = _run_with_policy("loop.render", lambda: _render_levels(st), st)
+                if not ok_render:
+                    pass
+            else:
+                age = now - st.last_ok_sync_ts
+                if age >= DEADMAN_TIMEOUT_S and not deadman_active:
+                    deadman_active = True
+                    print(f"[deadman] mixer sync stale for {age:.1f}s")
+                    _render_error(st, "XR18 LINK")
 
-        try:
-            events = poll_knobs()
-        except Exception as exc:
-            report_error("loop.poll", exc, st)
+        ok_poll, events, _, _ = _run_with_policy("loop.poll", poll_knobs, st)
+        if not ok_poll:
             events = []
 
         if deadman_active and events:
@@ -121,6 +134,8 @@ def main():
                 report_error("loop.display_health", RuntimeError(",".join(bad)), st)
                 display_degraded_announced = True
         else:
+            if display_degraded_announced:
+                print("[recovery] display health recovered")
             display_degraded_announced = False
 
         time.sleep(LOOP_SLEEP_S)

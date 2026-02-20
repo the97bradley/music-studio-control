@@ -38,7 +38,7 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 ## File map (quick)
 
 - `app/main.py` — main control loop
-- `app/core/` — state, faders, sync, apply logic, error handling, logging
+- `app/core/` — state, faders, sync, apply logic, error handling, error policy, logging
 - `app/io/` — OSC, hardware/display/knob adapters
 - `app/config/` — startup + controls loading
 - `controls.yaml` — editable runtime + mapping config
@@ -115,7 +115,8 @@ knob_step: 0.01
 
 ## Error handling (headless-friendly)
 
-All major exceptions flow through a centralized handler:
+All major exceptions flow through a centralized handler + policy layer:
+- policy decides retry/backoff + continue/degrade/fatal behavior by error context
 - screen 1 (`knob1`): error code
 - screen 2 (`knob2`): log timestamp (`HH:MM:SS`) to correlate with file logs
 

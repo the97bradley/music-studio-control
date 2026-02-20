@@ -56,12 +56,14 @@ def _second_screen(st=None) -> str:
     return "knob2"
 
 
-def report_error(where: str, exc: Exception, st=None):
+def report_error(where: str, exc: Exception, st=None, meta: dict | None = None):
     err_type = type(exc).__name__
     msg = str(exc).strip() or "no details"
     code = _code_for(where)
 
-    print(f"[error] {code} {where}: {err_type}: {msg}")
+    meta = meta or {}
+    meta_str = f" meta={meta}" if meta else ""
+    print(f"[error] {code} {where}: {err_type}: {msg}{meta_str}")
     print(traceback.format_exc())
 
     screen1 = _first_screen(st)
