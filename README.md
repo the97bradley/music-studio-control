@@ -4,9 +4,10 @@ Raspberry Pi endpoint for personal monitor control on Behringer XR18.
 
 ## Current architecture
 
-- `main.py` loop: polls knob events, applies grouped fader deltas, updates displays.
+- `main.py` loop: polls knob events, applies grouped fader deltas, syncs mixer state, updates displays.
 - `osc.py`: UDP OSC client + query support + xremote keepalive.
-- `state.py`: in-memory mixer state, channel names, group definitions, knob mapping.
+- `state.py`: in-memory mixer state, channel names, group definitions, knob mapping, per-knob step.
+- `controls.py` + `controls.json`: externalized group/mapping/sensitivity config.
 - `knobs.py`: encoder backend adapter (`ENCODER_BACKEND`, currently `null`).
 - `display.py`: display backend adapter (`DISPLAY_BACKEND`, `null` or `console`).
 
@@ -15,11 +16,15 @@ Raspberry Pi endpoint for personal monitor control on Behringer XR18.
 - `XR18_IP` (required): mixer IP address.
 - `XR18_BUS` (optional, default `2`): monitor bus 1..6.
 - `LOCAL_PORT` (optional, default `9100`): local UDP port.
+- `CONTROLS_CONFIG` (optional, default `controls.json`): path to controls config.
 - `ENCODER_BACKEND` (optional, default `null`): encoder backend selection.
 - `DISPLAY_BACKEND` (optional, default `null`): display backend selection (`console` for debug output).
+- `SYNC_EVERY_S` (optional, default `1.0`): mixer sync interval.
+- `DEADMAN_TIMEOUT_S` (optional, default `3.0`): stale-link timeout before lockout + error display.
 
-## Notes
+## Runtime behavior
 
-- Channel levels are stored as **linear 0.0..1.0** values (not dB).
-- Knob mapping is in `State.knob_to_group` and currently maps 8 knobs to 8 groups.
-- Hardware-specific encoder/OLED backends are intentionally stubbed for incremental bring-up.
+- Channel levels are stored as **linear 0.0..1.0** values in `State.ch_level`.
+- Startup writes `BOOT` info to displays, then switches to live levels.
+- On stale mixer link, displays show `ERROR | XR18 LINK` and knob writes are blocked until recovery.
+- Displays refresh during periodic sync, so external mixer/app changes are reflected.

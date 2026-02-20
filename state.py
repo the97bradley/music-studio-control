@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass, field
 from typing import Dict, List
 
@@ -8,8 +9,9 @@ MAX_LEVEL = 1.0
 @dataclass
 class State:
     bus: int
+    last_ok_sync_ts: float = field(default_factory=time.time)
     # channel -> linear level 0.0..1.0 (authoritative local cache)
-    ch_db: Dict[int, float] = field(default_factory=dict)
+    ch_level: Dict[int, float] = field(default_factory=dict)
     # channel -> name
     ch_name: Dict[int, str] = field(default_factory=dict)
 
@@ -37,7 +39,19 @@ class State:
         "knob8": "playback",
     })
 
+    # per-knob sensitivity in linear mixer level units (0..1)
+    knob_step: Dict[str, float] = field(default_factory=lambda: {
+        "knob1": 0.03,
+        "knob2": 0.03,
+        "knob3": 0.03,
+        "knob4": 0.03,
+        "knob5": 0.03,
+        "knob6": 0.02,
+        "knob7": 0.03,
+        "knob8": 0.03,
+    })
+
     def ensure_channels(self, n: int = 18):
         for ch in range(1, n + 1):
-            self.ch_db.setdefault(ch, MIN_LEVEL)
+            self.ch_level.setdefault(ch, MIN_LEVEL)
             self.ch_name.setdefault(ch, f"CH{ch:02d}")

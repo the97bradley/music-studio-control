@@ -1,0 +1,32 @@
+{
+  "groups": {
+    "vocal": [1],
+    "keys": [2],
+    "gtr1": [3],
+    "gtr2": [4],
+    "bass": [5],
+    "drums": [6, 7, 8, 9, 10, 11],
+    "click": [17],
+    "playback": [18]
+  },
+  "knob_to_group": {
+    "knob1": "vocal",
+    "knob2": "keys",
+    "knob3": "gtr1",
+    "knob4": "gtr2",
+    "knob5": "bass",
+    "knob6": "drums",
+    "knob7": "click",
+    "knob8": "playback"
+  },
+  "knob_step": {
+    "knob1": 0.03,
+    "knob2": 0.03,
+    "knob3": 0.03,
+    "knob4": 0.03,
+    "knob5": 0.03,
+    "knob6": 0.02,
+    "knob7": 0.03,
+    "knob8": 0.03
+  }
+}

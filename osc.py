@@ -1,9 +1,12 @@
 import socket
 import threading
+import time
+
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.osc_packet import OscPacket
 
 XR18_PORT = 10024
+
 
 class OscClient:
     def __init__(self, xr18_ip: str, local_port: int = 9100, timeout_s: float = 2.0):
@@ -11,13 +14,16 @@ class OscClient:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("", local_port))
         self.sock.settimeout(timeout_s)
+        self.timeout_s = timeout_s
         self._stop = threading.Event()
         self._io_lock = threading.Lock()
 
     def close(self):
         self._stop.set()
-        try: self.sock.close()
-        except: pass
+        try:
+            self.sock.close()
+        except Exception:
+            pass
 
     def _send_nolock(self, address: str, arg=None):
         b = OscMessageBuilder(address=address)
@@ -31,20 +37,28 @@ class OscClient:
             self._send_nolock(address, arg)
 
     def query(self, address: str, tries: int = 3):
-        # enquiry: address with no args
+        # Enquiry is address with no args. Ignore unrelated packets until timeout.
         for _ in range(tries):
+            deadline = time.time() + self.timeout_s
             with self._io_lock:
                 self._send_nolock(address)
-                try:
-                    data, _ = self.sock.recvfrom(4096)
-                except socket.timeout:
-                    continue
 
-            packet = OscPacket(data)
-            for timed in packet.messages:
-                m = timed.message
-                if m.address == address and m.params:
-                    return m.params[0]
+                while time.time() < deadline:
+                    remaining = max(0.01, deadline - time.time())
+                    self.sock.settimeout(remaining)
+                    try:
+                        data, _ = self.sock.recvfrom(4096)
+                    except socket.timeout:
+                        break
+
+                    packet = OscPacket(data)
+                    for timed in packet.messages:
+                        m = timed.message
+                        if m.address == address and m.params:
+                            self.sock.settimeout(self.timeout_s)
+                            return m.params[0]
+
+                self.sock.settimeout(self.timeout_s)
         return None
 
     def start_keepalive(self, interval_s: float = 5.0):
@@ -52,7 +66,7 @@ class OscClient:
             while not self._stop.is_set():
                 try:
                     self.send("/xremote", 0)
-                except:
+                except Exception:
                     pass
                 self._stop.wait(interval_s)
 
