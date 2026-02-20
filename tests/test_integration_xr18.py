@@ -38,9 +38,15 @@ class TestXR18Integration(unittest.TestCase):
         cls.st.groups = {"test": [cls.test_channel]}
         cls.st.knob_to_group = {"knob1": "test"}
 
-        ok = sync_faders(cls.osc, cls.st, channels=18)
-        if not ok:
-            raise unittest.SkipTest("Could not complete initial mixer sync")
+        # Fast, realistic preflight: require test channel to respond.
+        addr = f"/ch/{cls.test_channel:02d}/mix/{bus:02d}/level"
+        v = cls.osc.query(addr, tries=2)
+        if v is None:
+            raise unittest.SkipTest("Could not query test channel level from XR18")
+
+        # Seed baseline level for test channel; full 18ch sync is optional.
+        cls.st.ch_level[cls.test_channel] = float(v)
+        sync_faders(cls.osc, cls.st, channels=18)
 
     @classmethod
     def tearDownClass(cls):
