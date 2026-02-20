@@ -14,10 +14,7 @@ import test_integration_xr18 as live
 
 def main():
     parser = argparse.ArgumentParser(description="Run live XR18 integration tests (explicit opt-in).")
-    parser.add_argument("--live-xr18", action="store_true", help="Required safety flag to run live mixer tests")
     parser.add_argument("--xr18-ip", required=True, help="XR18 mixer IP")
-    parser.add_argument("--xr18-bus", type=int, default=2, help="XR18 bus (1..6)")
-    parser.add_argument("--xr18-test-channel", type=int, default=18, help="Safe test channel (1..18)")
     parser.add_argument("--local-port", type=int, default=9101, help="Local UDP port")
     parser.add_argument("--sim-detents", type=int, default=1, help="Signed simulated detents (+up / -down)")
     parser.add_argument("--sim-duration-s", type=float, default=0.0, help="Spread detents over this many seconds")
@@ -28,13 +25,7 @@ def main():
     parser.add_argument("--drop-test-max-s", type=float, default=6.0, help="Max allowed seconds for unreachable-peer timeout test")
     args = parser.parse_args()
 
-    if not args.live_xr18:
-        raise SystemExit("Refusing to run: pass --live-xr18 to confirm live mixer test")
-
-    live.LIVE_MODE = True
     live.XR18_IP = args.xr18_ip
-    live.XR18_BUS = args.xr18_bus
-    live.XR18_TEST_CHANNEL = args.xr18_test_channel
     live.LOCAL_PORT = args.local_port
     live.SIM_DETENTS = args.sim_detents
     live.SIM_DURATION_S = args.sim_duration_s

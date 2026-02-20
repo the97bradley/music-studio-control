@@ -167,18 +167,15 @@ Current test coverage includes:
 - error-code mapping and fallback alert path
 - granular apply-path error routing
 
-### Live XR18 integration tests (explicit flag)
+### Live XR18 integration tests
 
 There is also a live integration test suite that talks to a real XR18.
 
-It only runs with an explicit safety flag:
+It runs sequentially across multiple buses/channels (currently buses `1,2` and channels `1,16`).
 
 ```bash
 python3 tests/run_xr18_integration.py \
-  --live-xr18 \
   --xr18-ip 192.168.x.x \
-  --xr18-bus 2 \
-  --xr18-test-channel 18 \
   --sim-detents 12 \
   --sim-duration-s 2.0 \
   --group-channels 6,7,8 \
@@ -190,7 +187,8 @@ python3 tests/run_xr18_integration.py \
 
 What it validates:
 - OSC connectivity/query works
-- simulated knob movement changes mixer level (`--sim-detents` supports signed + / -, default step size 0.01)
+- simulated linear motion changes mixer level (`--sim-detents` supports signed + / -, default step size 0.01)
+- simulated back-and-forth motion returns near baseline
 - detent simulation can be spread over time with `--sim-duration-s`
 - boundary clamping at low/high limits
 - multi-step monotonic trajectory behavior
@@ -201,11 +199,12 @@ What it validates:
 - idempotent restore behavior across repeated cycles
 - level restore works after test
 
+The suite prints progress lines while running so you can see each bus/channel step.
+
 Safety notes:
-- uses an explicit run flag (`--live-xr18`) so accidental runs are less likely
-- use a safe channel for testing (`--xr18-test-channel`, default `18`)
+- runs sequentially (not concurrent) across configured buses/channels
 - run when no critical recording take is in progress
-- test restores the original value at end
+- tests restore channel values after motion checks
 
 ---
 
