@@ -1,16 +1,16 @@
-import os
 import time
 from dataclasses import dataclass, field
 from typing import Dict
 
+from controls import get_controls_value
 from hardware import create_alert_backend, create_display_backend
 
 _display = create_display_backend()
 _alert = create_alert_backend()
 
-DISPLAY_MAX_RETRIES = int(os.environ.get("DISPLAY_MAX_RETRIES", "3"))
-DISPLAY_BACKOFF_MS = int(os.environ.get("DISPLAY_BACKOFF_MS", "40"))
-DISPLAY_FAIL_THRESHOLD = int(os.environ.get("DISPLAY_FAIL_THRESHOLD", "3"))
+DISPLAY_MAX_RETRIES = int(get_controls_value("display.max_retries", 3))
+DISPLAY_BACKOFF_MS = int(get_controls_value("display.backoff_ms", 40))
+DISPLAY_FAIL_THRESHOLD = int(get_controls_value("display.fail_threshold", 3))
 
 
 @dataclass

@@ -25,13 +25,27 @@ def _load_yaml(path: str) -> Dict[str, Any]:
     return data or {}
 
 
-def load_controls(path: str) -> Dict[str, Any]:
+def load_controls(path: str = "controls.yaml") -> Dict[str, Any]:
     if not os.path.exists(path):
         return {}
     return _load_yaml(path)
 
 
-def apply_controls_config(st: State, path: str):
+def get_controls_value(key: str, default=None, path: str = "controls.yaml"):
+    try:
+        data = load_controls(path)
+    except Exception:
+        return default
+
+    cur = data
+    for part in key.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return default
+        cur = cur[part]
+    return cur
+
+
+def apply_controls_config(st: State, path: str = "controls.yaml"):
     if not os.path.exists(path):
         return
 

@@ -1,5 +1,6 @@
-import os
 from typing import Dict, List, Tuple
+
+from controls import get_controls_value
 
 
 class EncoderBackend:
@@ -54,14 +55,14 @@ class ConsoleAlertBackend(AlertBackend):
 
 
 def create_encoder_backend() -> EncoderBackend:
-    kind = os.environ.get("ENCODER_BACKEND", "null").lower().strip()
+    kind = str(get_controls_value("hardware.encoder_backend", "null")).lower().strip()
     if kind == "null":
         return NullEncoderBackend()
     return NullEncoderBackend()
 
 
 def create_display_backend() -> DisplayBackend:
-    kind = os.environ.get("DISPLAY_BACKEND", "null").lower().strip()
+    kind = str(get_controls_value("hardware.display_backend", "null")).lower().strip()
     if kind == "console":
         return ConsoleDisplayBackend()
     if kind == "null":
@@ -70,7 +71,7 @@ def create_display_backend() -> DisplayBackend:
 
 
 def create_alert_backend() -> AlertBackend:
-    kind = os.environ.get("ALERT_BACKEND", "console").lower().strip()
+    kind = str(get_controls_value("hardware.alert_backend", "console")).lower().strip()
     if kind == "console":
         return ConsoleAlertBackend()
     return NullAlertBackend()

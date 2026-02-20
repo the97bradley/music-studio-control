@@ -1,5 +1,21 @@
 xr18:
+  ip: 192.168.50.62
   bus: 2
+  local_port: 9100
+
+runtime:
+  sync_every_s: 1.0
+  deadman_timeout_s: 3.0
+
+hardware:
+  encoder_backend: null
+  display_backend: null
+  alert_backend: console
+
+display:
+  max_retries: 3
+  backoff_ms: 40
+  fail_threshold: 3
 
 groups:
   vocal: [1]

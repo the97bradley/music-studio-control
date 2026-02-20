@@ -52,21 +52,23 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 
 ## Configuration
 
-### Required
-- `XR18_IP` — mixer IP address (env), or set in `controls.yaml` as `xr18.ip`
+Configuration is read from `controls.yaml`.
 
-### Optional (with defaults)
-- `XR18_BUS` — optional env override for monitor bus (1..6). Preferred default location is `controls.yaml` (`xr18.bus`).
-- `LOCAL_PORT=9100` — local UDP port
-- `CONTROLS_CONFIG=<path>` — optional explicit controls YAML file (default: `controls.yaml`).
-- `ENCODER_BACKEND=null` — encoder backend selector
-- `DISPLAY_BACKEND=null` — display backend selector (`console` is useful for testing)
-- `ALERT_BACKEND=console` — fallback alert channel when display writes fail
-- `DISPLAY_MAX_RETRIES=3` — per-write display retry count
-- `DISPLAY_BACKOFF_MS=40` — retry backoff base in ms
-- `DISPLAY_FAIL_THRESHOLD=3` — failures before a screen is marked unhealthy
-- `SYNC_EVERY_S=1.0` — sync interval in seconds
-- `DEADMAN_TIMEOUT_S=3.0` — stale-link timeout before lockout/error
+Key fields:
+- `xr18.ip` (required)
+- `xr18.bus` (required, 1..6)
+- `xr18.local_port` (optional, default 9100)
+- `runtime.sync_every_s`
+- `runtime.deadman_timeout_s`
+- `hardware.encoder_backend`
+- `hardware.display_backend`
+- `hardware.alert_backend`
+- `display.max_retries`
+- `display.backoff_ms`
+- `display.fail_threshold`
+- `groups`
+- `knob_to_group`
+- `knob_step` (single global step)
 
 ---
 

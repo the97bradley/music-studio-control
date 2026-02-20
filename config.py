@@ -1,4 +1,3 @@
-import os
 import time
 
 from controls import apply_controls_config, load_controls
@@ -26,21 +25,17 @@ def wait_for_xr18(osc: OscClient, bus: int):
 
 def load_bus_and_ip(controls_path: str):
     controls = load_controls(controls_path)
-
     xr18_cfg = controls.get("xr18") if isinstance(controls.get("xr18"), dict) else {}
 
-    ip = os.environ.get("XR18_IP") or xr18_cfg.get("ip") or controls.get("xr18_ip")
+    ip = xr18_cfg.get("ip") or controls.get("xr18_ip")
     if not ip:
-        raise RuntimeError("XR18_IP is required (env or controls.yaml xr18.ip)")
+        raise RuntimeError("Missing xr18.ip in controls.yaml")
 
-    raw_bus = os.environ.get("XR18_BUS")
-    if raw_bus is None:
-        raw_bus = xr18_cfg.get("bus", controls.get("xr18_bus", 0))
-    bus = int(raw_bus)
+    bus = int(xr18_cfg.get("bus", controls.get("xr18_bus", 0)))
     if bus < 1 or bus > 6:
-        raise RuntimeError("XR18 bus must be 1-6 (env XR18_BUS or controls.yaml xr18.bus)")
+        raise RuntimeError("xr18.bus must be 1-6 in controls.yaml")
 
-    local_port = int(os.environ.get("LOCAL_PORT", "9100"))
+    local_port = int(xr18_cfg.get("local_port", controls.get("local_port", 9100)))
     return ip, bus, local_port
 
 
@@ -53,7 +48,7 @@ def fetch_channel_names(osc: OscClient, st: State, channels: int = 18):
 
 
 def startup():
-    controls_path = os.environ.get("CONTROLS_CONFIG", "controls.yaml")
+    controls_path = "controls.yaml"
 
     try:
         ip, bus, local_port = load_bus_and_ip(controls_path)

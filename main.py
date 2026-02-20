@@ -1,8 +1,8 @@
-import os
 import time
 
 from apply_logic import process_knob_event
 from config import StartupError, startup
+from controls import get_controls_value
 from display import (
     display_self_test,
     get_display_health,
@@ -15,9 +15,9 @@ from faders import add_group
 from knobs import poll_knobs
 from sync import sync_faders
 
-SYNC_EVERY_S = float(os.environ.get("SYNC_EVERY_S", "1.0"))
+SYNC_EVERY_S = float(get_controls_value("runtime.sync_every_s", 1.0))
 LOOP_SLEEP_S = 0.01
-DEADMAN_TIMEOUT_S = float(os.environ.get("DEADMAN_TIMEOUT_S", "3.0"))
+DEADMAN_TIMEOUT_S = float(get_controls_value("runtime.deadman_timeout_s", 3.0))
 
 
 def _render_startup(st):
