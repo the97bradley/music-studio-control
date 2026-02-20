@@ -111,6 +111,18 @@ This doc maps each code to likely causes and first fixes.
 2. Run `i2cdetect -y 1` and confirm expected device addresses.
 3. Ensure I2C is enabled (`raspi-config`).
 
+### `E122` — `display.selftest`
+**What it means:** One or more displays failed startup self-test writes.
+
+**Likely causes**
+- one OLED disconnected/faulty
+- shared I2C bus instability
+
+**Try first**
+1. Check wiring/connectors for failed screen IDs.
+2. Lower I2C clock if needed.
+3. Restart service and verify repeatability.
+
 ---
 
 ## Runtime codes (`E2xx`)
@@ -168,9 +180,32 @@ This doc maps each code to likely causes and first fixes.
 2. Check for unknown knob IDs from hardware backend.
 3. Confirm mixer comms are healthy.
 
+### `E215` — `loop.display_health`
+**What it means:** One or more screens crossed failure threshold and were marked unhealthy.
+
+**Likely causes**
+- repeated I2C errors on specific screen(s)
+- display hardware intermittent failure
+
+**Try first**
+1. Check which screen IDs are unhealthy in logs.
+2. Inspect wiring/power for those displays.
+3. Keep system running; remaining screens continue independently.
+
 ---
 
 ## Fallback
+
+### `E311` — Display fallback alert channel used
+**What it means:** Display path failed, so fallback alert backend was triggered.
+
+**Likely causes**
+- display retries exhausted
+- display subsystem unavailable
+
+**Try first**
+1. Check display-related logs around the same timestamp.
+2. Verify `ALERT_BACKEND` is set for your preferred fallback route.
 
 ### `E999` — Unknown
 **What it means:** Error context wasn’t mapped.

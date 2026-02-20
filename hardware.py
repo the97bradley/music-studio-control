@@ -3,25 +3,15 @@ from typing import Dict, List, Tuple
 
 
 class EncoderBackend:
-    """Interface for encoder hardware backends."""
-
     def read_events(self) -> List[Tuple[str, int]]:
-        """
-        Return list of (knob_id, direction) events.
-        direction: +1 clockwise, -1 counter-clockwise.
-        """
         return []
 
 
 class NullEncoderBackend(EncoderBackend):
-    """No-op backend used by default until hardware wiring is enabled."""
-
     pass
 
 
 class DisplayBackend:
-    """Interface for display hardware backends."""
-
     def render(self, knob_id: str, label: str, percent: int):
         pass
 
@@ -30,14 +20,10 @@ class DisplayBackend:
 
 
 class NullDisplayBackend(DisplayBackend):
-    """No-op backend used by default until OLED wiring is enabled."""
-
     pass
 
 
 class ConsoleDisplayBackend(DisplayBackend):
-    """Simple debug backend for bring-up/testing over SSH."""
-
     def __init__(self):
         self._last: Dict[str, Tuple[str, str]] = {}
 
@@ -52,24 +38,39 @@ class ConsoleDisplayBackend(DisplayBackend):
             print(f"[display] {knob_id}: {line1} | {line2}")
 
 
+class AlertBackend:
+    def signal(self, code: str, detail: str = ""):
+        pass
+
+
+class NullAlertBackend(AlertBackend):
+    pass
+
+
+class ConsoleAlertBackend(AlertBackend):
+    def signal(self, code: str, detail: str = ""):
+        extra = f" {detail}" if detail else ""
+        print(f"[alert] {code}{extra} (fallback)")
+
+
 def create_encoder_backend() -> EncoderBackend:
     kind = os.environ.get("ENCODER_BACKEND", "null").lower().strip()
-
-    # Placeholder for future hardware backends.
     if kind == "null":
         return NullEncoderBackend()
-
-    # Unknown => fail safe to null.
     return NullEncoderBackend()
 
 
 def create_display_backend() -> DisplayBackend:
     kind = os.environ.get("DISPLAY_BACKEND", "null").lower().strip()
-
     if kind == "console":
         return ConsoleDisplayBackend()
     if kind == "null":
         return NullDisplayBackend()
-
-    # Unknown => fail safe to null.
     return NullDisplayBackend()
+
+
+def create_alert_backend() -> AlertBackend:
+    kind = os.environ.get("ALERT_BACKEND", "console").lower().strip()
+    if kind == "console":
+        return ConsoleAlertBackend()
+    return NullAlertBackend()

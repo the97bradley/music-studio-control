@@ -61,6 +61,10 @@ So the architecture is ready, and now we can plug in real GPIO/I2C backends.
 - `CONTROLS_CONFIG=controls.json` — path to controls mapping file
 - `ENCODER_BACKEND=null` — encoder backend selector
 - `DISPLAY_BACKEND=null` — display backend selector (`console` is useful for testing)
+- `ALERT_BACKEND=console` — fallback alert channel when display writes fail
+- `DISPLAY_MAX_RETRIES=3` — per-write display retry count
+- `DISPLAY_BACKOFF_MS=40` — retry backoff base in ms
+- `DISPLAY_FAIL_THRESHOLD=3` — failures before a screen is marked unhealthy
 - `SYNC_EVERY_S=1.0` — sync interval in seconds
 - `DEADMAN_TIMEOUT_S=3.0` — stale-link timeout before lockout/error
 
@@ -100,7 +104,8 @@ Example:
 
 - Internal channel values are stored as **linear 0.0..1.0** in `State.ch_level`.
 - XR18 dB reference constants are in `state.py` (`-90.0 .. +10.0`).
-- On boot, screens show `BOOT`, then switch to live values.
+- On boot, screens show `BOOT`, run a per-screen self-test, then switch to live values.
+- Display writes are isolated per screen with retry + backoff; one bad screen should not break the full loop.
 - Sync runs every second by default, so external mixer/app changes appear on displays quickly.
 - If mixer comms go stale past timeout, writes are blocked and screens show link error.
 
@@ -122,12 +127,17 @@ All major exceptions flow through a centralized handler and are routed to screen
 
 **Display / init**
 - `E121` — `display.init` (startup screen rendering failure)
+- `E122` — `display.selftest` (one or more screens failed startup self-test)
 
 **Runtime loop**
 - `E211` — `loop.sync` (periodic mixer sync failure)
 - `E212` — `loop.render` (display refresh failure)
 - `E213` — `loop.poll` (encoder polling failure)
 - `E214` — `loop.apply` (apply knob movement/write failure)
+- `E215` — `loop.display_health` (one or more screens marked unhealthy)
+
+**Fallback channel**
+- `E311` — display-error fallback alert path triggered
 
 **Fallback**
 - `E999` — unknown/unmapped context

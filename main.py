@@ -2,7 +2,13 @@ import os
 import time
 
 from config import StartupError, startup
-from display import percent_from_value, set_screen_display, set_screen_text
+from display import (
+    display_self_test,
+    get_display_health,
+    percent_from_value,
+    set_screen_display,
+    set_screen_text,
+)
 from error_handler import report_error
 from faders import add_group
 from knobs import poll_knobs
@@ -49,12 +55,16 @@ def main():
 
     try:
         _render_startup(st)
+        failed = display_self_test(st.knob_to_group.keys())
+        if failed:
+            report_error("display.selftest", RuntimeError(",".join(failed)), st)
         _render_levels(st)
     except Exception as exc:
         report_error("display.init", exc, st)
 
     last_sync = 0.0
     deadman_active = False
+    display_degraded_announced = False
 
     while True:
         now = time.time()
@@ -105,6 +115,15 @@ def main():
                 set_screen_display(knob_id, group_name.upper(), pct)
             except Exception as exc:
                 report_error("loop.apply", exc, st)
+
+        health = get_display_health()
+        if any(health["unhealthy"].values()):
+            if not display_degraded_announced:
+                bad = [k for k, v in health["unhealthy"].items() if v]
+                report_error("loop.display_health", RuntimeError(",".join(bad)), st)
+                display_degraded_announced = True
+        else:
+            display_degraded_announced = False
 
         time.sleep(LOOP_SLEEP_S)
 
