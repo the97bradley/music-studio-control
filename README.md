@@ -133,7 +133,10 @@ All major exceptions flow through a centralized handler and are routed to screen
 - `E211` — `loop.sync` (periodic mixer sync failure)
 - `E212` — `loop.render` (display refresh failure)
 - `E213` — `loop.poll` (encoder polling failure)
-- `E214` — `loop.apply` (apply knob movement/write failure)
+- `E214` — `loop.apply` (legacy generic apply failure)
+- `E214A` — `loop.apply.mapping` (unknown knob/group mapping)
+- `E214B` — `loop.apply.write` (mixer write path failure)
+- `E214C` — `loop.apply.display` (display update failed after apply)
 - `E215` — `loop.display_health` (one or more screens marked unhealthy)
 
 **Fallback channel**

@@ -18,6 +18,9 @@ ERROR_CODES = {
     "loop.render": "E212",
     "loop.poll": "E213",
     "loop.apply": "E214",
+    "loop.apply.mapping": "E214A",
+    "loop.apply.write": "E214B",
+    "loop.apply.display": "E214C",
     "loop.display_health": "E215",
     # compatibility with earlier labels
     "startup": "E101",

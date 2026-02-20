@@ -1,6 +1,7 @@
 import os
 import time
 
+from apply_logic import process_knob_event
 from config import StartupError, startup
 from display import (
     display_self_test,
@@ -101,20 +102,15 @@ def main():
             continue
 
         for knob_id, direction in events:
-            try:
-                group_name = st.knob_to_group.get(knob_id)
-                if not group_name:
-                    continue
-
-                step = st.knob_step.get(knob_id, 0.03)
-                add_group(osc, st, group_name, direction * step)
-
-                chans = st.groups[group_name]
-                rep_ch = chans[0]
-                pct = percent_from_value(st.ch_level[rep_ch])
-                set_screen_display(knob_id, group_name.upper(), pct)
-            except Exception as exc:
-                report_error("loop.apply", exc, st)
+            process_knob_event(
+                osc,
+                st,
+                knob_id,
+                direction,
+                add_group_fn=add_group,
+                set_screen_display_fn=set_screen_display,
+                report_error_fn=report_error,
+            )
 
         health = get_display_health()
         if any(health["unhealthy"].values()):

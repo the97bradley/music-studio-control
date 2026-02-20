@@ -7,6 +7,9 @@ class TestErrorHandler(unittest.TestCase):
     def test_code_mapping_known_and_unknown(self):
         self.assertEqual(error_handler._code_for("startup.load_env"), "E111")
         self.assertEqual(error_handler._code_for("loop.apply"), "E214")
+        self.assertEqual(error_handler._code_for("loop.apply.mapping"), "E214A")
+        self.assertEqual(error_handler._code_for("loop.apply.write"), "E214B")
+        self.assertEqual(error_handler._code_for("loop.apply.display"), "E214C")
         self.assertEqual(error_handler._code_for("does.not.exist"), "E999")
 
     def test_report_error_uses_fallback_when_screen_write_fails(self):

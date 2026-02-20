@@ -167,18 +167,41 @@ This doc maps each code to likely causes and first fixes.
 
 ---
 
-### `E214` — `loop.apply`
-**What it means:** Failed applying a knob change (group lookup/write/display update path).
+### `E214` — `loop.apply` (legacy generic)
+**What it means:** Generic apply-path failure (older catch-all path).
+
+### `E214A` — `loop.apply.mapping`
+**What it means:** Unknown knob ID or invalid/missing group mapping.
 
 **Likely causes**
-- bad knob mapping
-- malformed step config
-- OSC write failure during apply
+- hardware backend emitted unknown knob ID
+- `controls.json` knob/group mismatch
 
 **Try first**
-1. Verify `controls.json` mapping and steps.
-2. Check for unknown knob IDs from hardware backend.
-3. Confirm mixer comms are healthy.
+1. Verify knob IDs emitted by backend match `knob_to_group` keys.
+2. Verify mapped group names exist in `groups`.
+
+### `E214B` — `loop.apply.write`
+**What it means:** Failed writing updated level(s) to mixer.
+
+**Likely causes**
+- transient OSC/network failure during write
+- mixer unreachable at write time
+
+**Try first**
+1. Check XR18 connectivity and recent deadman events.
+2. Retry and watch logs for repeated write faults.
+
+### `E214C` — `loop.apply.display`
+**What it means:** Mixer write succeeded, but display update failed for that knob.
+
+**Likely causes**
+- per-screen display hardware/I2C fault
+- retries exhausted on that display write
+
+**Try first**
+1. Inspect display wiring for the specific knob screen.
+2. Check if same screen also triggers `E215`.
 
 ### `E215` — `loop.display_health`
 **What it means:** One or more screens crossed failure threshold and were marked unhealthy.
